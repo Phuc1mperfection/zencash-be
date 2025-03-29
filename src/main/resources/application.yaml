@@ -1,0 +1,28 @@
+server:
+  port: 8080 #can thiet thi sua cong
+
+spring:
+  datasource:
+    url: "jdbc:mysql://localhost:3306/zencash?createDatabaseIfNotExist=true" #sua moi cong db
+    username: root #sua ten dn
+    password: #sua pass
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+
+  #config swagger
+  springdoc:
+    swagger-ui:
+      path: /swagger-ui.html
+    api-docs:
+      path: /api-docs #la thong tin chi tiet cua req va doi tuong dto
+    show-actuator: true
+
+jwt:
+  signerKey: "yFDzyCN5=vFSB$#dyT=4RT8cZy8mdlJW9TX$9Hfmls%L%^@8-s$4T%vGWTBsm^WG"
+  validDuration: 3600 # in second - hour
+  refreshableDuration: 36000 # in seconds - 10 hours
