@@ -2,13 +2,13 @@ package com.example.zencash.service;
 
 import com.example.zencash.dto.AuthResponseDTO;
 import com.example.zencash.dto.LoginDTO;
-import com.example.zencash.entity.Token;
 import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.TokenRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import com.example.zencash.utils.JwtUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -46,24 +46,11 @@ public class AuthService {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        tokenRepository.deleteByUser(user);
-
-        String token = jwtUtil.generateAccessToken(user); // Đổi tên biến từ accessToken thành token
+        // Tạo Access Token và Refresh Token
+        String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        Token tokenEntity = Token.builder()
-                .token(token)
-                .expirationDate(jwtUtil.getExpirationDate(token))
-                .refreshToken(refreshToken)
-                .refreshExpirationDate(jwtUtil.getExpirationDate(refreshToken))
-                .revoked(false)
-                .expired(false)
-                .user(user)
-                .build();
-        tokenRepository.save(tokenEntity);
-
-        return new AuthResponseDTO(user.getUsername(), user.getEmail(), token);
+        return new AuthResponseDTO(user.getUsername(), user.getEmail(), accessToken, refreshToken);
     }
-
 }
 

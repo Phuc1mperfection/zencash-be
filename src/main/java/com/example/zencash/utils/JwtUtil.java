@@ -21,17 +21,6 @@ public class JwtUtil {
         return secretKey; // Trả về chuỗi secretKey trực tiếp
     }
 
-
-    public String generateToken(String email) {
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 giờ
-                .signWith(SignatureAlgorithm.HS256, getSignKey())
-
-                .compact();
-    }
-
     public String generateAccessToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getEmail())
@@ -79,18 +68,13 @@ public class JwtUtil {
     }
 
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        Date expiration = extractExpiration(token);
+        return expiration.before(new Date()); // Trả về true nếu token đã hết hạn
     }
 
-    public boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    public boolean validateToken(String token) {
+        return !isTokenExpired(token);
     }
-    public Date getExpirationDate(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(getSignKey())
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getExpiration();
-    }
+
+
 }
