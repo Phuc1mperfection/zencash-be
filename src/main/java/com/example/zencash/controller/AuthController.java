@@ -1,5 +1,7 @@
 package com.example.zencash.controller;
 
+import com.example.zencash.dto.AuthResponseDTO;
+import com.example.zencash.dto.LoginDTO;
 import com.example.zencash.entity.User;
 import com.example.zencash.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -18,5 +20,9 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<String> register(@RequestBody User user) {
         return ResponseEntity.ok(authService.register(user));
+    }
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginDTO loginDTO) {
+        return ResponseEntity.ok(authService.login(loginDTO));
     }
 }
