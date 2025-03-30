@@ -18,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @UuidGenerator
     private UUID id;
 
@@ -34,4 +34,7 @@ public class User {
     private Set<String> roles;  // Có thể là "USER", "ADMIN"
     @Column(nullable = false, unique = true)
     private String username; // Thêm cột username
+
+    @Column
+    private String name;
 }
