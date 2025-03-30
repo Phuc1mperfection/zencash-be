@@ -41,13 +41,15 @@ public class UserController {
 
 
     @PutMapping("/me")
-    public User updateUser(@AuthenticationPrincipal User currentUser,
-                           @RequestBody @Valid UpdateUserRequest request) {
-        // Tìm user trong database
-        User user = userRepository.findById(currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_INPUT));
+    public ResponseEntity<UserResponse> updateUser(@AuthenticationPrincipal UserDetails userDetails,
+                                                   @RequestBody @Valid UpdateUserRequest request) {
+        if (userDetails == null) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        }
 
-        // Cập nhật thông tin nếu có
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
+
         if (request.getName() != null) {
             user.setName(request.getName());
         }
@@ -55,20 +57,21 @@ public class UserController {
             user.setUsername(request.getUsername());
         }
         if (request.getEmail() != null) {
-            // Kiểm tra email đã tồn tại chưa
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new AppException(ErrorCode.EMAIL_TAKEN);
             }
             user.setEmail(request.getEmail());
         }
-
         if (request.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        // Lưu user mới vào database
-        return userRepository.save(user);
+        userRepository.save(user);
+
+        UserResponse response = new UserResponse(user.getEmail(), user.getUsername(), user.getName());
+        return ResponseEntity.ok(response);
     }
+
     @PostMapping("/verify-password")
     public ResponseEntity<Map<String, String>> verifyPassword(@AuthenticationPrincipal UserDetails userDetails,
                                                               @RequestBody Map<String, String> request) {
