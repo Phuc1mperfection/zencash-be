@@ -1,17 +1,20 @@
 package com.example.zencash.service;
 
-import com.example.zencash.dto.AuthResponseDTO;
-import com.example.zencash.dto.LoginDTO;
+import com.example.zencash.dto.AuthResponse;
+import com.example.zencash.dto.LoginResponse;
+import com.example.zencash.dto.RefreshTokenRequest;
 import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.TokenRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import com.example.zencash.utils.JwtUtil;
-import jakarta.transaction.Transactional;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
 
 @Service
 
@@ -32,17 +35,18 @@ public class AuthService {
 
         try {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
+            user.setRoles(Collections.singleton("USER"));
             userRepository.save(user);
             return "User registered successfully!";
         } catch (Exception e) {
             throw new AppException(ErrorCode.INTERNAL_ERROR);
         }
     }
-    public AuthResponseDTO login(LoginDTO loginDTO) {
-        User user = userRepository.findByEmail(loginDTO.getEmail())
+    public AuthResponse login(LoginResponse loginResponse) {
+        User user = userRepository.findByEmail(loginResponse.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
-        if (!passwordEncoder.matches(loginDTO.getPasswordRaw(), user.getPassword())) {
+        if (!passwordEncoder.matches(loginResponse.getPasswordRaw(), user.getPassword())) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
@@ -50,7 +54,25 @@ public class AuthService {
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        return new AuthResponseDTO(user.getUsername(), user.getEmail(), accessToken, refreshToken);
+        return new AuthResponse(user.getUsername(), user.getEmail(), accessToken, refreshToken);
     }
+    public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        // Kiểm tra refresh token hợp lệ hay không
+        if (!jwtUtil.validateToken(refreshToken)) {
+            throw new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        // Lấy thông tin user từ refresh token
+        String email = jwtUtil.extractEmail(refreshToken);
+        String username = jwtUtil.extractUsername(refreshToken);
+
+        // Tạo Access Token mới
+        String newAccessToken = jwtUtil.generateAccessToken(email, username);
+
+        return new AuthResponse(username, email, newAccessToken, refreshToken);
+    }
+
 }
 

@@ -16,21 +16,28 @@ import java.util.function.Function;
 public class JwtUtil {
     @Value("${SECRET_KEY}") // Lấy giá trị từ application.properties hoặc .env
     private String secretKey;
-
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 30; // 30 phút
+    private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7;
     private String getSignKey() {
         return secretKey; // Trả về chuỗi secretKey trực tiếp
     }
 
     public String generateAccessToken(User user) {
+        return generateAccessToken(user.getEmail(), user.getUsername());
+    }
+
+    // Overloaded method để dùng cho Refresh Token
+    public String generateAccessToken(String email, String username) {
         return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("username", user.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 giờ
-                .signWith(SignatureAlgorithm.HS256, getSignKey())
+                .setSubject(email) // Email là subject
+                .claim("username", username) // Thêm username vào payload
+                .setIssuedAt(new Date()) // Thời điểm tạo token
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION)) // Hạn token
+                .signWith(SignatureAlgorithm.HS512, getSignKey())
 
                 .compact();
     }
+
 
     public String generateRefreshToken(User user) {
         return Jwts.builder()
@@ -38,7 +45,7 @@ public class JwtUtil {
                 .claim("username", user.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 604800000)) // 7 ngày
-                .signWith(SignatureAlgorithm.HS256, getSignKey())
+                .signWith(SignatureAlgorithm.HS512, getSignKey())
 
                 .compact();
     }

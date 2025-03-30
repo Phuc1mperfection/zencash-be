@@ -1,6 +1,11 @@
 package com.example.zencash.filter;
 
+import com.example.zencash.exception.AppException;
 import com.example.zencash.utils.JwtUtil;
+import com.example.zencash.utils.ErrorCode;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,18 +46,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
-        String username = jwtUtil.extractUsername(token);
+        try {
+            if (!jwtUtil.validateToken(token)) {
+                throw new AppException(ErrorCode.INVALID_TOKEN);
+            }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            String username = jwtUtil.extractUsername(token);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(token)) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
+        } catch (AppException e) {
+            handleException(response, e.getErrorCode());
+            return;
+        } catch (ExpiredJwtException e) {
+            handleException(response, ErrorCode.TOKEN_EXPIRED);
+            return;
+        } catch (MalformedJwtException | SignatureException e) {
+            handleException(response, ErrorCode.INVALID_TOKEN);
+            return;
         }
+
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Ghi lỗi vào HttpServletResponse để trả về JSON rõ ràng.
+     */
+    private void handleException(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+        response.setStatus(errorCode.getHttpStatus().value());
+        response.setContentType("application/json");
+        response.getWriter().write(String.format(
+                "{ \"code\": %d, \"message\": \"%s\" }",
+                errorCode.getCode(), errorCode.getMessage()
+        ));
     }
 }
