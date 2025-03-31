@@ -5,6 +5,7 @@ import com.example.zencash.dto.UserResponse;
 import com.example.zencash.exception.AppException;
 import com.example.zencash.entity.User;
 import com.example.zencash.repository.UserRepository;
+import com.example.zencash.service.UserService;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,54 +24,34 @@ import java.util.UUID;
 public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
+    // Lấy thông tin user hiện tại
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
-
-        UserResponse response = new UserResponse(
-                user.getEmail(), user.getUsername(), user.getName());
-
+        if (userDetails == null) {
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        }
+        UserResponse response = userService.getCurrentUser(userDetails.getUsername());
         return ResponseEntity.ok(response);
     }
 
-
+    // Cập nhật thông tin user
     @PutMapping("/me")
     public ResponseEntity<UserResponse> updateUser(@AuthenticationPrincipal UserDetails userDetails,
                                                    @RequestBody @Valid UpdateUserRequest request) {
         if (userDetails == null) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
-
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
-
-        if (request.getName() != null) {
-            user.setName(request.getName());
-        }
-        if (request.getUsername() != null) {
-            user.setUsername(request.getUsername());
-        }
-        if (request.getEmail() != null) {
-            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new AppException(ErrorCode.EMAIL_TAKEN);
-            }
-            user.setEmail(request.getEmail());
-        }
-        if (request.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
-
-        userRepository.save(user);
-
-        UserResponse response = new UserResponse(user.getEmail(), user.getUsername(), user.getName());
+        UserResponse response = userService.updateUser(userDetails.getUsername(), request);
         return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/verify-password")
     public ResponseEntity<Map<String, String>> verifyPassword(@AuthenticationPrincipal UserDetails userDetails,

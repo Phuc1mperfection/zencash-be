@@ -14,7 +14,15 @@ public enum ErrorCode {
     INVALID_CREDENTIALS("Invalid email or password!", 1006, HttpStatus.UNAUTHORIZED),
     INVALID_REFRESH_TOKEN("Invalid refresh token", 1005, HttpStatus.FORBIDDEN),
     TOKEN_EXPIRED("Token has expired", 1007, HttpStatus.UNAUTHORIZED),
-    INVALID_TOKEN("Invalid token!", 1008, HttpStatus.FORBIDDEN);
+    INVALID_TOKEN("Invalid token!", 1008, HttpStatus.FORBIDDEN),
+    USERNAME_REQUIRED("Username cannot be empty!", 1009, HttpStatus.BAD_REQUEST),
+    EMAIL_REQUIRED("Email cannot be empty!", 1010, HttpStatus.BAD_REQUEST),
+    PASSWORD_TOO_SHORT("Password must be at least 6 characters!", 1011, HttpStatus.BAD_REQUEST),
+    PASSWORD_REQUIRED("Password cannot be empty!", 1012, HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND("User not found!", 1009, HttpStatus.NOT_FOUND),
+    UNAUTHORIZED("Unauthorized access!", 1010, HttpStatus.UNAUTHORIZED);
+
+
 
     private final String message;
     private final int code;
