@@ -18,7 +18,7 @@ import java.util.function.Function;
 public class JwtUtil {
     @Value("${SECRET_KEY}") // Lấy giá trị từ application.properties hoặc .env
     private String secretKey;
-    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 1; // 30 phút
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 30; // 30 phút
     private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7;
     private String getSignKey() {
         return secretKey; // Trả về chuỗi secretKey trực tiếp
@@ -46,7 +46,7 @@ public class JwtUtil {
                 .setSubject(user.getEmail())
                 .claim("username", user.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 604800000)) // 7 ngày
+                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION)) // 7 ngày
                 .signWith(SignatureAlgorithm.HS512, getSignKey())
 
                 .compact();
