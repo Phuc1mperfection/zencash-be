@@ -26,6 +26,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final TokenRepository tokenRepository;
     private final JwtUtil jwtUtil;
+    private final UserService userService;
 
     public String register(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
@@ -107,6 +108,33 @@ public class AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REFRESH_TOKEN));
 
         tokenRepository.delete(storedToken);
+    }
+
+    @Transactional
+    public AuthResponse logout(String token) {
+        Token storedToken = tokenRepository.findByTokenAndRevokedIsFalse(token)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
+
+        // Thu hồi token hiện tại
+        storedToken.setRevoked(true);
+        tokenRepository.save(storedToken);
+
+        return new AuthResponse("User logged out successfully", null, null, null);
+    }
+
+    @Transactional
+    public AuthResponse deleteAccount(String token) {
+        // Kiểm tra và xác minh token hợp lệ
+        String username = jwtUtil.extractUsername(token); // Giải mã username từ token
+        if (username == null || !jwtUtil.validateToken(token)) {
+            throw new AppException(ErrorCode.INVALID_TOKEN);
+        }
+
+        // Gọi UserService để hủy kích hoạt tài khoản
+        userService.deactivateAccount(username);
+
+        // Trả về phản hồi thành công
+        return new AuthResponse("Account deleted successfully", "", "", "");
     }
 }
 

@@ -4,8 +4,10 @@ import com.example.zencash.dto.UpdateUserRequest;
 import com.example.zencash.dto.UserResponse;
 import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
+import com.example.zencash.repository.TokenRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
+import com.example.zencash.utils.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +15,15 @@ import org.springframework.stereotype.Service;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final TokenRepository tokenRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, TokenRepository tokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+        this.tokenRepository = tokenRepository;
     }
 
     // Lấy thông tin người dùng
@@ -58,5 +65,15 @@ public class UserService {
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
         return passwordEncoder.matches(enteredPassword, user.getPassword());
+    }
+
+    public void deactivateAccount(String username) {
+        // Tìm user theo username
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Cập nhật trạng thái active = false để hủy kích hoạt tài khoản
+        user.setActive(false); // Thay đổi trạng thái của tài khoản
+        userRepository.save(user); // Lưu lại thay đổi
     }
 }

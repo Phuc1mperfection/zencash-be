@@ -37,4 +37,8 @@ public class User {
 
     @Column
     private String name;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
 }
