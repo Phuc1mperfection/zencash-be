@@ -116,22 +116,27 @@ public class AuthService {
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
 
         // Thu hồi token hiện tại
-        storedToken.setRevoked(true);
-        tokenRepository.save(storedToken);
+        tokenRepository.revokeToken(token);
 
         return new AuthResponse("User logged out successfully", null, null, null);
     }
 
     @Transactional
     public AuthResponse deleteAccount(String token) {
-        // Kiểm tra và xác minh token hợp lệ
-        String username = jwtUtil.extractUsername(token); // Giải mã username từ token
-        if (username == null || !jwtUtil.validateToken(token)) {
-            throw new AppException(ErrorCode.INVALID_TOKEN);
+        Token storedToken = tokenRepository.findByTokenAndRevokedIsFalse(token)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
+
+        // Lấy user từ token
+        User user = storedToken.getUser();
+        if (user == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
         }
 
         // Gọi UserService để hủy kích hoạt tài khoản
-        userService.deactivateAccount(username);
+        userService.deactivateAccount(user);
+
+        storedToken.setRevoked(true);
+        tokenRepository.save(storedToken);
 
         // Trả về phản hồi thành công
         return new AuthResponse("Account deleted successfully", "", "", "");

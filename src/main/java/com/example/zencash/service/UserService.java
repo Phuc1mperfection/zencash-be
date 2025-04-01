@@ -67,13 +67,8 @@ public class UserService {
         return passwordEncoder.matches(enteredPassword, user.getPassword());
     }
 
-    public void deactivateAccount(String username) {
-        // Tìm user theo username
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        // Cập nhật trạng thái active = false để hủy kích hoạt tài khoản
-        user.setActive(false); // Thay đổi trạng thái của tài khoản
-        userRepository.save(user); // Lưu lại thay đổi
+    public void deactivateAccount(User user) {
+        user.setActive(false); // Đánh dấu tài khoản là không hoạt động
+        userRepository.save(user); // Lưu thay đổi
     }
 }

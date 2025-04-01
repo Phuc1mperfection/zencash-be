@@ -38,7 +38,7 @@ public class User {
     @Column
     private String name;
 
-    @Column(nullable = false)
+    @Column
     private boolean active = true;
 
 }

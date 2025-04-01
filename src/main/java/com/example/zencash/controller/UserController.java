@@ -74,20 +74,15 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/delete-account")
+    @PostMapping("/delete-account")
     public ResponseEntity<AuthResponse> deleteAccount(HttpServletRequest request) {
-        // Lấy token từ header Authorization
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new AppException(ErrorCode.INVALID_TOKEN);
         }
 
-        String token = authHeader.substring(7); // Loại bỏ "Bearer " và lấy token
-
-        // Gọi AuthService để xóa tài khoản
-        AuthResponse response = authService.deleteAccount(token);
-
-        return ResponseEntity.ok(response); // Trả về phản hồi thành công
+        String token = authHeader.substring(7);
+        return ResponseEntity.ok(authService.deleteAccount(token));
     }
 
 }
