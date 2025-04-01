@@ -41,10 +41,9 @@ public class SecurityConfig {
             "/webjars/swagger-ui/**",
             "/swagger-ui/index.html",
             "/swagger-ui.html",
-
+            "/api/auth/refresh-token",
             "/api/auth/signup",
             "/api/auth/login",
-            "/api/exercises/**"  // Permit all Exercise APIs
     };
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -70,8 +69,6 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers("/api/users/me").authenticated()
-                        .requestMatchers("/api/auth/logout").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
