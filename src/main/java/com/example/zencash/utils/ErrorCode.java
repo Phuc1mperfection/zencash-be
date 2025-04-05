@@ -20,8 +20,8 @@ public enum ErrorCode {
     PASSWORD_TOO_SHORT("Password must be at least 6 characters!", 1011, HttpStatus.BAD_REQUEST),
     PASSWORD_REQUIRED("Password cannot be empty!", 1012, HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND("User not found!", 1009, HttpStatus.NOT_FOUND),
-    UNAUTHORIZED("Unauthorized access!", 1010, HttpStatus.UNAUTHORIZED);
-
+    UNAUTHORIZED("Unauthorized access!", 1010, HttpStatus.UNAUTHORIZED),
+    PASSWORD_ERROR("The current password is incorrect or the new password does not match.", 1013, HttpStatus.BAD_REQUEST);
 
 
     private final String message;
