@@ -12,7 +12,9 @@ public class UpdateUserRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    private String password;
-    private String name;
+    private String fullname;
+    private String currency;
+    private String language;
+
 
 }

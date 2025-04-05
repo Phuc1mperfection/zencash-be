@@ -1,5 +1,6 @@
 package com.example.zencash.service;
 
+import com.example.zencash.dto.ChangePasswordRequest;
 import com.example.zencash.dto.UpdateUserRequest;
 import com.example.zencash.dto.UserResponse;
 import com.example.zencash.entity.User;
@@ -8,6 +9,7 @@ import com.example.zencash.repository.TokenRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import com.example.zencash.utils.JwtUtil;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +33,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
-        return new UserResponse(user.getEmail(), user.getUsername(), user.getName());
+        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getCurrency());
     }
 
     // Cập nhật thông tin người dùng
@@ -39,32 +41,49 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
-        if (request.getName() != null) {
-            user.setName(request.getName());
+        if (request.getFullname() != null) {
+            user.setFullname(request.getFullname());
         }
         if (request.getUsername() != null) {
             user.setUsername(request.getUsername());
         }
+        if (request.getCurrency() != null) {
+            user.setCurrency(request.getCurrency());
+        }
+
+
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new AppException(ErrorCode.EMAIL_TAKEN);
             }
             user.setEmail(request.getEmail());
         }
-        if (request.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
+
 
         userRepository.save(user);
-        return new UserResponse(user.getEmail(), user.getUsername(), user.getName());
+        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(),user.getCurrency());
     }
 
-    // Xác minh mật khẩu người dùng
-    public boolean verifyPassword(String email, String enteredPassword) {
+    public boolean changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        return passwordEncoder.matches(enteredPassword, user.getPassword());
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_ERROR); // Use custom exception to handle this
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_ERROR); // Use custom exception to handle this
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        return true;
+    }
+
+    public void deactivateAccount(User user) {
+        user.setActive(false); // Đánh dấu tài khoản là không hoạt động
+        userRepository.save(user); // Lưu thay đổi
     }
 
     public void deactivateAccount(User user) {
