@@ -10,5 +10,7 @@ import lombok.Setter;
 public class UserResponse{
     private String email;
     private String username;
-    private String name;
+    private String fullname;
+    private String currency;
+
 }
