@@ -3,6 +3,7 @@ package com.example.zencash.controller;
 import com.example.zencash.dto.CategoryGroupResponse;
 import com.example.zencash.service.CategoryGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,8 +16,9 @@ public class CategoryGroupController {
 
     // Thêm CategoryGroup
     @PostMapping
-    public ResponseEntity<CategoryGroupResponse> create(@RequestBody CategoryGroupResponse request) {
-        return ResponseEntity.ok(categoryGroupService.createCategoryGroup(request));
+    public ResponseEntity<CategoryGroupResponse> createCategoryGroup(@RequestBody CategoryGroupResponse request) {
+        CategoryGroupResponse response = categoryGroupService.createCategoryGroup(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     // Sửa CategoryGroup

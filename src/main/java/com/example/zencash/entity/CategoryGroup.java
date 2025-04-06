@@ -12,10 +12,9 @@ import java.util.List;
 @Entity
 public class CategoryGroup {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Getter
     @Column
     private String name;
 
