@@ -110,6 +110,18 @@ public class AuthService {
     }
 
     @Transactional
+    public AuthResponse logout(String token) {
+        Token storedToken = tokenRepository.findByTokenAndRevokedIsFalse(token)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
+
+        storedToken.setRevoked(true); // Đánh dấu token đã bị thu hồi
+        tokenRepository.save(storedToken);
+
+        return new AuthResponse("User logged out successfully", null, null, null, null);
+    }
+
+
+    @Transactional
     public AuthResponse deleteAccount(String token) {
         Token storedToken = tokenRepository.findByTokenAndRevokedIsFalse(token)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
