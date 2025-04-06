@@ -4,11 +4,7 @@ import com.example.zencash.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-
-import lombok.Getter;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -18,7 +14,7 @@ import java.util.function.Function;
 public class JwtUtil {
     @Value("${SECRET_KEY}") // Lấy giá trị từ application.properties hoặc .env
     private String secretKey;
-    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 60 *60 ; // 30 phút
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 60 * 60 ; // 30 phút
     private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7;
     private String getSignKey() {
         return secretKey; // Trả về chuỗi secretKey trực tiếp

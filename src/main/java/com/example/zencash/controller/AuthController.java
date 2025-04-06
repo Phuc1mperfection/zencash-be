@@ -4,11 +4,7 @@ import com.example.zencash.dto.AuthResponse;
 import com.example.zencash.dto.LoginResponse;
 import com.example.zencash.dto.RefreshTokenRequest;
 import com.example.zencash.entity.User;
-import com.example.zencash.exception.AppException;
-import com.example.zencash.repository.UserRepository;
 import com.example.zencash.service.AuthService;
-import com.example.zencash.utils.ErrorCode;
-import com.example.zencash.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,5 +34,6 @@ public class AuthController {
     public ResponseEntity<AuthResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refreshAccessToken(request));
     }
+    
 
 }

@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Entity
@@ -15,17 +16,26 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "budget_id", nullable = false)
-    private Budget budget;  // Mối quan hệ với ngân sách
-
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private BigDecimal allocatedAmount;  // Số tiền đã phân bổ cho danh mục
+    @Column
+    private LocalDateTime createAt = LocalDateTime.now();
 
-    @Column(nullable = false)
-    private BigDecimal spentAmount;  // Số tiền đã chi trong danh mục
+    @Column
+    private LocalDateTime updateAt = LocalDateTime.now();
+
+    @ManyToOne
+    @JoinColumn(name = "cid")
+    private CategoryGroup categoryGroup;
+
+    @ManyToOne
+    @JoinColumn(name = "uid")
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "bid")
+    private Budget budget;
+
 }
 
