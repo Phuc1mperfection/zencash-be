@@ -31,17 +31,14 @@ public class User {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
-    private Set<String> roles;
-
+    private Set<String> roles;  // Có thể là "USER", "ADMIN"
     @Column(nullable = false, unique = true)
-    private String username;
+    private String username; // Thêm cột username
 
     @Column
-    private String fullname;
-
-    @Column(nullable = false)
-    private String currency = "VND"; //
+    private String name;
 
     @Column
     private boolean active = true;
+
 }

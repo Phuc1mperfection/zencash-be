@@ -10,6 +10,7 @@ import com.example.zencash.repository.TokenRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import com.example.zencash.utils.JwtUtil;
+import io.jsonwebtoken.Claims;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -72,7 +73,7 @@ public class AuthService {
                 .build();
         tokenRepository.save(token);
 
-        return new AuthResponse(user.getUsername(), user.getEmail(), accessToken, refreshToken, user.getFullname());
+        return new AuthResponse(user.getUsername(), user.getEmail(), accessToken, refreshToken);
     }
 
     public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
@@ -94,11 +95,11 @@ public class AuthService {
         // Extract user info from token
         String email = jwtUtil.extractEmail(refreshToken);
         String username = jwtUtil.extractUsername(refreshToken);
-        String fullname = storedToken.getUser().getFullname();
+
         // Generate new access token
         String newAccessToken = jwtUtil.generateAccessToken(email, username);
 
-        return new AuthResponse(username, email, newAccessToken, refreshToken,fullname);
+        return new AuthResponse(username, email, newAccessToken, refreshToken);
     }
 
     @Transactional
