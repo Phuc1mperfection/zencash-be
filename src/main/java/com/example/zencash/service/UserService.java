@@ -73,4 +73,9 @@ public class UserService {
         userRepository.save(user);
         return true;
     }
+
+    public void deactivateAccount(User user) {
+        user.setActive(false);
+        userRepository.save(user);
+    }
 }

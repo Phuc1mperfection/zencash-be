@@ -1,28 +1,32 @@
 package com.example.zencash.controller;
 
+import com.example.zencash.dto.AuthResponse;
 import com.example.zencash.dto.ChangePasswordRequest;
 import com.example.zencash.dto.UpdateUserRequest;
 import com.example.zencash.dto.UserResponse;
 import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.UserRepository;
+import com.example.zencash.service.AuthService;
 import com.example.zencash.service.UserService;
 import com.example.zencash.utils.ErrorCode;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
     private final UserService userService;
+    private final AuthService authService;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService, AuthService authService) {
         this.userService = userService;
+        this.authService = authService;
     }
     // Lấy thông tin user hiện tại
     @GetMapping("/me")
@@ -58,5 +62,16 @@ public class UserController {
             return ResponseEntity.status(e.getHttpStatus())
                     .body(e.getMessage()); // Return error message from the custom exception
         }
+    }
+
+    @PostMapping("/delete-account")
+    public ResponseEntity<AuthResponse> deleteAccount(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new AppException(ErrorCode.INVALID_TOKEN);
+        }
+
+        String token = authHeader.substring(7);
+        return ResponseEntity.ok(authService.deleteAccount(token));
     }
 }

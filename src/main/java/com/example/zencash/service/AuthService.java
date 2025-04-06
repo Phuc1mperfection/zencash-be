@@ -24,6 +24,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenRepository tokenRepository;
+    private final UserService userService;
     private final JwtUtil jwtUtil;
 
     public String register(User user) {
@@ -107,5 +108,27 @@ public class AuthService {
 
         tokenRepository.delete(storedToken);
     }
+
+    @Transactional
+    public AuthResponse deleteAccount(String token) {
+        Token storedToken = tokenRepository.findByTokenAndRevokedIsFalse(token)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_TOKEN));
+
+        // Lấy user từ token
+        User user = storedToken.getUser();
+        if (user == null) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // Gọi UserService để hủy kích hoạt tài khoản
+        userService.deactivateAccount(user);
+
+        storedToken.setRevoked(true);
+        tokenRepository.save(storedToken);
+
+        // Trả về phản hồi thành công
+        return new AuthResponse("Account deleted successfully", "", "", "","");
+    }
+
 }
 
