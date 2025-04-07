@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/category-groups")
 public class CategoryGroupController {
@@ -34,4 +36,11 @@ public class CategoryGroupController {
         categoryGroupService.deleteCategoryGroup(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping
+    public ResponseEntity<List<CategoryGroupResponse>> getAllCategoryGroups() {
+        List<CategoryGroupResponse> responses = categoryGroupService.getAllCategoryGroups();
+        return ResponseEntity.ok(responses);
+    }
+
 }
