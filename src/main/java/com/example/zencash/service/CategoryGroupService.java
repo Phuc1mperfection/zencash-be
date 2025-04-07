@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryGroupService {
@@ -44,6 +46,13 @@ public class CategoryGroupService {
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
 
         categoryGroupRepo.delete(categoryGroup);
+    }
+
+    public List<CategoryGroupResponse> getAllCategoryGroups() {
+        List<CategoryGroup> groups = categoryGroupRepo.findAll();
+        return groups.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     // Chuyển từ Entity sang Response
