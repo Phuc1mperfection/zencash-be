@@ -41,6 +41,7 @@ public class Category {
     private Budget budget;
 
     public void setIsDefault(boolean aDefault) {
+
     }
 }
 

@@ -23,6 +23,7 @@ public class TransactionService {
     @Autowired private BudgetRepository budgetRepository;
 
     public TransactionResponse createTransaction(TransactionRequest request) {
+
         Budget budget = budgetRepository.findById(request.getBudgetId())
                 .orElseThrow(() -> new RuntimeException("Budget not found"));
 
