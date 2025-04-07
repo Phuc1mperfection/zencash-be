@@ -25,6 +25,9 @@ public class Category {
     @Column
     private LocalDateTime updateAt = LocalDateTime.now();
 
+    @Column
+    private boolean isDefault;
+
     @ManyToOne
     @JoinColumn(name = "cid")
     private CategoryGroup categoryGroup;

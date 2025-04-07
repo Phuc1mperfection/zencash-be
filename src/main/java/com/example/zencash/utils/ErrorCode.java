@@ -25,7 +25,8 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND("Category not found.",1014, HttpStatus.BAD_REQUEST),
     CATEGORY_GROUP_NOT_FOUND("Category group not found.",1015, HttpStatus.BAD_REQUEST),
     UNAUTHORIZED_CATEGORY_ACTION("You do not have permission to perform this action on category.", 1016, HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED_GROUP_ACTION("You do not have permission to perform this action on category group.", 1017, HttpStatus.BAD_REQUEST);
+    UNAUTHORIZED_GROUP_ACTION("You do not have permission to perform this action on category group.", 1017, HttpStatus.BAD_REQUEST),
+    BUDGET_NOT_FOUND("Budget not found",1018 ,HttpStatus.BAD_REQUEST );
 
 
     private final String message;

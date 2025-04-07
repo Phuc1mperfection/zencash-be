@@ -33,24 +33,23 @@ public class CategoryService {
 
     // Thêm Category
     public CategoryResponse createCategory(CategoryResponse request, User user) {
-        if (!user.getRoles().contains("USER") && !user.getRoles().contains("ADMIN")) {
+        if (user == null) {
             throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
         }
 
         CategoryGroup categoryGroup = categoryGroupRepo.findById(request.getCategoryGroupId())
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
 
-        User categoryUser = userRepo.findById(request.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION));
-
+        // Lấy Budget từ ID
         Budget budget = budgetRepo.findById(request.getBudgetId())
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
 
+        // Gán user từ token vào category
         Category category = new Category();
         category.setName(request.getName());
         category.setCategoryGroup(categoryGroup);
-        category.setUser(categoryUser);
-        category.setBudget(budget);
+        category.setUser(user);  // Đảm bảo gán User từ token vào đây
+        category.setBudget(budget); // Gán budget nếu cần
         category.setCreateAt(LocalDateTime.now());
         category.setUpdateAt(LocalDateTime.now());
 
@@ -58,14 +57,11 @@ public class CategoryService {
         return mapToResponse(saved);
     }
 
+
     // Sửa Category
     public CategoryResponse updateCategory(Long id, CategoryResponse request, User user) {
         Category category = categoryRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-
-        if (!user.getRoles().contains("USER") && !user.getRoles().contains("ADMIN")) {
-            throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
-        }
 
         CategoryGroup categoryGroup = categoryGroupRepo.findById(request.getCategoryGroupId())
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
@@ -90,10 +86,6 @@ public class CategoryService {
         Category category = categoryRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-        if (!user.getRoles().contains("USER") && !user.getRoles().contains("ADMIN")) {
-            throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
-        }
-
         categoryRepo.delete(category);
     }
 
@@ -108,3 +100,6 @@ public class CategoryService {
         return response;
     }
 }
+
+
+

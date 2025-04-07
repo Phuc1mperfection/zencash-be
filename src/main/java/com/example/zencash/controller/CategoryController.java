@@ -17,24 +17,23 @@ public class CategoryController {
 
     // Thêm Category
     @PostMapping
-    public ResponseEntity<CategoryResponse> create(@RequestBody CategoryResponse request,
-                                                   @AuthenticationPrincipal User user) {
+    public ResponseEntity<CategoryResponse> create(@RequestBody CategoryResponse request, @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(categoryService.createCategory(request, user));
     }
+
 
     // Sửa Category
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> update(@PathVariable Long id,
-                                                   @RequestBody CategoryResponse request,
-                                                   @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(categoryService.updateCategory(id, request, user));
+                                                   @RequestBody CategoryResponse request) {
+        return ResponseEntity.ok(categoryService.updateCategory(id, request, null));
     }
 
     // Xóa Category
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id,
-                                       @AuthenticationPrincipal User user) {
-        categoryService.deleteCategory(id, user);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        categoryService.deleteCategory(id, null);
         return ResponseEntity.ok().build();
     }
 }
+
