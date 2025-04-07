@@ -1,23 +1,14 @@
 package com.example.zencash.controller;
 
+import com.example.zencash.dto.CategoryRequest;
 import com.example.zencash.dto.CategoryResponse;
-import com.example.zencash.entity.Budget;
-import com.example.zencash.entity.Category;
-import com.example.zencash.entity.User;
-import com.example.zencash.repository.BudgetRepository;
-import com.example.zencash.repository.UserRepository;
 import com.example.zencash.service.CategoryService;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -25,21 +16,51 @@ public class CategoryController {
 
     @Autowired
     private CategoryService categoryService;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private BudgetRepository budgetRepository;
 
+    // Thêm Category
     @PostMapping
-    public ResponseEntity<CategoryResponse> createCategory(@RequestBody CategoryResponse categoryResponse, @AuthenticationPrincipal UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public ResponseEntity<CategoryResponse> addCategory(@RequestBody CategoryRequest categoryRequest) {
+        try {
+            CategoryResponse categoryResponse = categoryService.addCategory(categoryRequest);
+            return new ResponseEntity<>(categoryResponse, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
 
-        // Find the associated budget for the category
-        Budget budget = budgetRepository.findById(categoryResponse.getBudgetid())
-                .orElseThrow(() -> new EntityNotFoundException("Budget not found"));
+    // Sửa Category
+    @PutMapping("/{categoryId}")
+    public ResponseEntity<CategoryResponse> updateCategory(
+            @PathVariable Long categoryId,
+            @RequestBody CategoryRequest categoryRequest
+    ) {
+        CategoryResponse categoryResponse = categoryService.updateCategory(categoryId, categoryRequest);
+        if (categoryResponse != null) {
+            return new ResponseEntity<>(categoryResponse, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
 
-        Category category = categoryService.createCategory(categoryResponse, budget);
-        return ResponseEntity.status(HttpStatus.CREATED).body(categoryResponse);
+    // Xoá Category
+    @DeleteMapping("/{categoryId}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long categoryId) {
+        if (categoryService.deleteCategory(categoryId)) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    // Lấy tất cả Category theo CategoryGroup
+    @GetMapping("/categoryGroup/{categoryGroupId}")
+    public ResponseEntity<List<CategoryResponse>> getCategoriesByCategoryGroup(@PathVariable Long categoryGroupId) {
+        List<CategoryResponse> categories = categoryService.getCategoriesByCategoryGroup(categoryGroupId);
+        return new ResponseEntity<>(categories, HttpStatus.OK);
+    }
+
+    // Lấy tất cả Category theo Budget
+    @GetMapping("/budget/{budgetId}")
+    public ResponseEntity<List<CategoryResponse>> getCategoriesByBudget(@PathVariable Long budgetId) {
+        List<CategoryResponse> categories = categoryService.getCategoriesByBudget(budgetId);
+        return new ResponseEntity<>(categories, HttpStatus.OK);
     }
 }

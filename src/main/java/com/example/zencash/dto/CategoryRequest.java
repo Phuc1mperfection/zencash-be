@@ -3,16 +3,13 @@ package com.example.zencash.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-
-public class CategoryResponse {
-    private Long id;
+// CategoryRequest
+public class CategoryRequest {
     private String name;
     private Long categoryGroupId;
-    private UUID userId;
     private Long budgetId;
     private boolean isDefault;
 }

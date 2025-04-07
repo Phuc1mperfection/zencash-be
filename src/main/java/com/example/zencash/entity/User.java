@@ -42,5 +42,7 @@ public class User {
     @Column(nullable = false)
     private String currency = "VND"; //
 
+    @Column
+    private boolean active = true;
 
 }
