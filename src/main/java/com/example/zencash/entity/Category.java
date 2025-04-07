@@ -40,5 +40,7 @@ public class Category {
     @JoinColumn(name = "bid")
     private Budget budget;
 
+    public void setIsDefault(boolean aDefault) {
+    }
 }
 

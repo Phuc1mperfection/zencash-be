@@ -1,5 +1,6 @@
 package com.example.zencash.service;
 
+import com.example.zencash.dto.CategoryRequest;
 import com.example.zencash.dto.CategoryResponse;
 import com.example.zencash.entity.Budget;
 import com.example.zencash.entity.Category;
@@ -12,94 +13,155 @@ import com.example.zencash.repository.CategoryRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CategoryService {
 
     @Autowired
-    private CategoryRepository categoryRepo;
+    private CategoryRepository categoryRepository;
 
     @Autowired
-    private CategoryGroupRepository categoryGroupRepo;
+    private CategoryGroupRepository categoryGroupRepository;
 
     @Autowired
-    private UserRepository userRepo;
+    private UserRepository userRepository;
 
     @Autowired
-    private BudgetRepository budgetRepo;
+    private BudgetRepository budgetRepository;
 
-    // Thêm Category
-    public CategoryResponse createCategory(CategoryResponse request, User user) {
-        if (user == null) {
+    public CategoryResponse addCategory(CategoryRequest categoryRequest) {
+        // Lấy thông tin user từ token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Lấy CategoryGroup
+        CategoryGroup categoryGroup = categoryGroupRepository.findById(categoryRequest.getCategoryGroupId())
+                .orElseThrow(() -> new RuntimeException("Invalid CategoryGroup"));
+
+        // Lấy Budget
+        Budget budget = budgetRepository.findById(categoryRequest.getBudgetId())
+                .orElseThrow(() -> new RuntimeException("Invalid Budget"));
+
+        Category category = new Category();
+        category.setName(categoryRequest.getName());
+        category.setIsDefault(categoryRequest.isDefault());
+        category.setCategoryGroup(categoryGroup);
+        category.setBudget(budget);
+
+        // Gán user vào category nếu không phải default
+        if (!categoryRequest.isDefault()) {
+            category.setUser(user);
+        }
+
+        Category saved = categoryRepository.save(category);
+
+        return new CategoryResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getCategoryGroup().getId(),
+                saved.getUser() != null ? saved.getUser().getId() : null,
+                saved.getBudget().getId(),
+                saved.isDefault()
+        );
+    }
+
+
+    public CategoryResponse updateCategory(Long categoryId, CategoryRequest categoryRequest) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        // Nếu là mặc định thì không cho sửa
+        if (category.isDefault()) {
             throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
         }
 
-        CategoryGroup categoryGroup = categoryGroupRepo.findById(request.getCategoryGroupId())
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
+        // Lấy user hiện tại từ token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        // Lấy Budget từ ID
-        Budget budget = budgetRepo.findById(request.getBudgetId())
+        // Chỉ cho phép nếu user là chủ sở hữu category
+        if (category.getUser() == null || !category.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
+        }
+
+        category.setName(categoryRequest.getName());
+        category.setIsDefault(false); // luôn là false vì user không thể tạo default
+        category.setUpdateAt(LocalDateTime.now());
+
+        CategoryGroup categoryGroup = categoryGroupRepository.findById(categoryRequest.getCategoryGroupId())
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
+        category.setCategoryGroup(categoryGroup);
+
+        Budget budget = budgetRepository.findById(categoryRequest.getBudgetId())
                 .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
-
-        // Gán user từ token vào category
-        Category category = new Category();
-        category.setName(request.getName());
-        category.setCategoryGroup(categoryGroup);
-        category.setUser(user);  // Đảm bảo gán User từ token vào đây
-        category.setBudget(budget); // Gán budget nếu cần
-        category.setCreateAt(LocalDateTime.now());
-        category.setUpdateAt(LocalDateTime.now());
-
-        Category saved = categoryRepo.save(category);
-        return mapToResponse(saved);
-    }
-
-
-    // Sửa Category
-    public CategoryResponse updateCategory(Long id, CategoryResponse request, User user) {
-        Category category = categoryRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-
-        CategoryGroup categoryGroup = categoryGroupRepo.findById(request.getCategoryGroupId())
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
-
-        User categoryUser = userRepo.findById(request.getUserId())
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION));
-
-        Budget budget = budgetRepo.findById(request.getBudgetId())
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-
-        category.setName(request.getName());
-        category.setCategoryGroup(categoryGroup);
-        category.setUser(categoryUser);
         category.setBudget(budget);
-        category.setUpdateAt(LocalDateTime.now());
 
-        return mapToResponse(categoryRepo.save(category));
+        // Gán lại user phòng trường hợp null
+        category.setUser(user);
+
+        Category updated = categoryRepository.save(category);
+
+        return new CategoryResponse(
+                updated.getId(),
+                updated.getName(),
+                updated.getCategoryGroup().getId(),
+                updated.getUser() != null ? updated.getUser().getId() : null,
+                updated.getBudget().getId(),
+                updated.isDefault()
+        );
     }
 
-    // Xóa Category
-    public void deleteCategory(Long id, User user) {
-        Category category = categoryRepo.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-        categoryRepo.delete(category);
+    // Xoá Category
+    public boolean deleteCategory(Long categoryId) {
+        Optional<Category> existingCategory = categoryRepository.findById(categoryId);
+        if (existingCategory.isPresent()) {
+            categoryRepository.delete(existingCategory.get());
+            return true;
+        }
+        return false;
     }
 
-    // Chuyển từ Entity sang Response
-    private CategoryResponse mapToResponse(Category category) {
-        CategoryResponse response = new CategoryResponse();
-        response.setId(category.getId());
-        response.setName(category.getName());
-        response.setCategoryGroupId(category.getCategoryGroup().getId());
-        response.setUserId(category.getUser().getId());
-        response.setBudgetId(category.getBudget().getId());
-        return response;
+    // Lấy tất cả Category theo CategoryGroup
+    public List<CategoryResponse> getCategoriesByCategoryGroup(Long categoryGroupId) {
+        List<Category> categories = categoryRepository.findByCategoryGroupId(categoryGroupId);
+        return categories.stream()
+                .map(category -> new CategoryResponse(
+                        category.getId(),
+                        category.getName(),
+                        category.getCategoryGroup().getId(),
+                        category.getUser() != null ? category.getUser().getId() : null,
+                        category.getBudget().getId(),
+                        category.isDefault()
+                ))
+                .toList();
+    }
+
+    // Lấy tất cả Category theo Budget
+    public List<CategoryResponse> getCategoriesByBudget(Long budgetId) {
+        List<Category> categories = categoryRepository.findByBudgetId(budgetId);
+        return categories.stream()
+                .map(category -> new CategoryResponse(
+                        category.getId(),
+                        category.getName(),
+                        category.getCategoryGroup().getId(),
+                        category.getUser() != null ? category.getUser().getId() : null,
+                        category.getBudget().getId(),
+                        category.isDefault()
+                ))
+                .toList();
     }
 }
-
 
 
