@@ -3,9 +3,11 @@ package com.example.zencash.service;
 import com.example.zencash.entity.Budget;
 import com.example.zencash.entity.Transaction;
 import com.example.zencash.entity.User;
+import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.BudgetRepository;
 import com.example.zencash.repository.TransactionRepository;
 import com.example.zencash.repository.UserRepository;
+import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +33,7 @@ public class CurrencyConversionService {
     public void convertCurrencyForUser(String email, String targetCurrency) {
         // Lấy thông tin người dùng từ email (từ bearer token)
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String currentCurrency = user.getCurrency(); // Lấy mệnh giá hiện tại của user
 

@@ -18,21 +18,28 @@ public class CategoryGroupService {
     @Autowired
     private CategoryGroupRepository categoryGroupRepo;
 
-    // Thêm CategoryGroup
     public CategoryGroupResponse createCategoryGroup(CategoryGroupResponse request) {
+        if (categoryGroupRepo.existsByNameIgnoreCase(request.getName())) {
+            throw new AppException(ErrorCode.CATEGORY_GROUP_ALREADY_EXISTS);
+        }
+
         CategoryGroup categoryGroup = new CategoryGroup();
         categoryGroup.setName(request.getName());
         categoryGroup.setCreateAt(LocalDateTime.now());
         categoryGroup.setUpdateAt(LocalDateTime.now());
 
-        CategoryGroup saved = categoryGroupRepo.save(categoryGroup);
-        return mapToResponse(saved);
+        return mapToResponse(categoryGroupRepo.save(categoryGroup));
     }
 
-    // Sửa CategoryGroup
     public CategoryGroupResponse updateCategoryGroup(Long id, CategoryGroupResponse request) {
         CategoryGroup categoryGroup = categoryGroupRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
+
+        boolean nameExists = categoryGroupRepo.existsByNameIgnoreCase(request.getName()) &&
+                !categoryGroup.getName().equalsIgnoreCase(request.getName());
+        if (nameExists) {
+            throw new AppException(ErrorCode.CATEGORY_GROUP_ALREADY_EXISTS);
+        }
 
         categoryGroup.setName(request.getName());
         categoryGroup.setUpdateAt(LocalDateTime.now());
@@ -40,11 +47,9 @@ public class CategoryGroupService {
         return mapToResponse(categoryGroupRepo.save(categoryGroup));
     }
 
-    // Xóa CategoryGroup
     public void deleteCategoryGroup(Long id) {
         CategoryGroup categoryGroup = categoryGroupRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
-
         categoryGroupRepo.delete(categoryGroup);
     }
 

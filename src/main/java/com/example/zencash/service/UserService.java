@@ -7,7 +7,6 @@ import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -57,21 +56,20 @@ public class UserService {
         return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(),user.getCurrency());
     }
 
-    public boolean changePassword(String email, ChangePasswordRequest request) {
+    public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new AppException(ErrorCode.PASSWORD_ERROR); // Use custom exception to handle this
+            throw new AppException(ErrorCode.PASSWORD_ERROR);
         }
 
         if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
-            throw new AppException(ErrorCode.PASSWORD_ERROR); // Use custom exception to handle this
+            throw new AppException(ErrorCode.PASSWORD_ERROR);
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
-        return true;
     }
 
     public void deactivateAccount(User user) {

@@ -10,4 +10,6 @@ import java.util.List;
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findByCategoryGroupId(Long categoryGroupId);
     List<Category> findByBudgetId(Long budgetId);
+
+    boolean existsByNameIgnoreCaseAndBudgetId(String name, Long id);
 }

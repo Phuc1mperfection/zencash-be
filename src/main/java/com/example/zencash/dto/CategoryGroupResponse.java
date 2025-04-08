@@ -8,6 +8,8 @@ import lombok.Data;
 public class CategoryGroupResponse {
     private Long id;
     private String name;
+//    private Boolean isDefault;
+    private Long budgetId;
 
     public CategoryGroupResponse() {
 
