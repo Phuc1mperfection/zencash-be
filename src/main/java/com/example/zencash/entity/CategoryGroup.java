@@ -18,9 +18,6 @@ public class CategoryGroup {
     @Column
     private String name;
 
-//    @Column
-//    private boolean isDefault;
-
     @Column
     private LocalDateTime createAt = LocalDateTime.now();
 
