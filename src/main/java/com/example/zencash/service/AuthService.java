@@ -72,7 +72,7 @@ public class AuthService {
                 .build();
         tokenRepository.save(token);
 
-        return new AuthResponse(user.getUsername(), user.getEmail(), accessToken, refreshToken, user.getFullname());
+        return new AuthResponse(user.getUsername(), user.getEmail(), accessToken, refreshToken, user.getFullname(),user.getCurrency());
     }
 
     public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
@@ -95,10 +95,12 @@ public class AuthService {
         String email = jwtUtil.extractEmail(refreshToken);
         String username = jwtUtil.extractUsername(refreshToken);
         String fullname = storedToken.getUser().getFullname();
+        String currency = storedToken.getUser().getCurrency();
+
         // Generate new access token
         String newAccessToken = jwtUtil.generateAccessToken(email, username);
 
-        return new AuthResponse(username, email, newAccessToken, refreshToken,fullname);
+        return new AuthResponse(username, email, newAccessToken, refreshToken,fullname,currency);
     }
 
     @Transactional
@@ -117,7 +119,7 @@ public class AuthService {
         storedToken.setRevoked(true); // Đánh dấu token đã bị thu hồi
         tokenRepository.save(storedToken);
 
-        return new AuthResponse("User logged out successfully", null, null, null, null);
+        return new AuthResponse("User logged out successfully", null, null, null, null,null);
     }
 
 
@@ -139,7 +141,7 @@ public class AuthService {
         tokenRepository.save(storedToken);
 
         // Trả về phản hồi thành công
-        return new AuthResponse("Account deleted successfully", "", "", "","");
+        return new AuthResponse("Account deleted successfully", "", "", "","","");
     }
 
 }
