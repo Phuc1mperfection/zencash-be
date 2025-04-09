@@ -27,6 +27,9 @@ public class CategoryGroup {
     @OneToMany(mappedBy = "categoryGroup")
     private List<Category> categories;
 
+    @ManyToOne
+    @JoinColumn(name = "budget_id")
+    private Budget budget;
 
 }
 

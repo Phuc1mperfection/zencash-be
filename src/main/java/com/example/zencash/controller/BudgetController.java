@@ -2,19 +2,20 @@ package com.example.zencash.controller;
 
 import com.example.zencash.dto.BudgetRequest;
 import com.example.zencash.dto.BudgetResponse;
-import com.example.zencash.dto.CreateBudgetRequest;
 import com.example.zencash.entity.Budget;
 import com.example.zencash.entity.User;
+import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.service.BudgetService;
+import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,7 @@ public class BudgetController {
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         Budget budget = budgetService.createBudget(request, user);
 
@@ -54,7 +55,7 @@ public class BudgetController {
     @GetMapping
     public ResponseEntity<List<BudgetResponse>> getUserBudgets(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         List<Budget> budgets = budgetService.getBudgetsForUser(user);
         List<BudgetResponse> responses = budgets.stream().map(b -> new BudgetResponse(
@@ -63,6 +64,18 @@ public class BudgetController {
 
         return ResponseEntity.ok(responses);
     }
+
+    @GetMapping("/total-remaining")
+    public ResponseEntity<BigDecimal> getUserTotalRemaining(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        BigDecimal totalRemaining = budgetService.calculateUserTotalRemaining(user);
+        return ResponseEntity.ok(totalRemaining);
+    }
+
 }
 
 

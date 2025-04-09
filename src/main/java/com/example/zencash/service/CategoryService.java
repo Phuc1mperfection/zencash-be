@@ -37,19 +37,21 @@ public class CategoryService {
     private BudgetRepository budgetRepository;
 
     public CategoryResponse addCategory(CategoryRequest categoryRequest) {
-        // Lấy thông tin user từ token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Lấy CategoryGroup
         CategoryGroup categoryGroup = categoryGroupRepository.findById(categoryRequest.getCategoryGroupId())
                 .orElseThrow(() -> new RuntimeException("Invalid CategoryGroup"));
 
-        // Lấy Budget
         Budget budget = budgetRepository.findById(categoryRequest.getBudgetId())
                 .orElseThrow(() -> new RuntimeException("Invalid Budget"));
+
+        // Kiểm tra trùng tên trong cùng 1 budget
+        if (categoryRepository.existsByNameIgnoreCaseAndBudgetId(categoryRequest.getName(), budget.getId())) {
+            throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+        }
 
         Category category = new Category();
         category.setName(categoryRequest.getName());
@@ -57,7 +59,6 @@ public class CategoryService {
         category.setCategoryGroup(categoryGroup);
         category.setBudget(budget);
 
-        // Gán user vào category nếu không phải default
         if (!categoryRequest.isDefault()) {
             category.setUser(user);
         }
@@ -75,28 +76,33 @@ public class CategoryService {
     }
 
 
+
     public CategoryResponse updateCategory(Long categoryId, CategoryRequest categoryRequest) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-        // Nếu là mặc định thì không cho sửa
         if (category.isDefault()) {
             throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
         }
 
-        // Lấy user hiện tại từ token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        // Chỉ cho phép nếu user là chủ sở hữu category
         if (category.getUser() == null || !category.getUser().getId().equals(user.getId())) {
             throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
         }
 
+        // Nếu tên thay đổi, kiểm tra trùng tên trong cùng budget
+        if (!category.getName().equalsIgnoreCase(categoryRequest.getName())) {
+            if (categoryRepository.existsByNameIgnoreCaseAndBudgetId(categoryRequest.getName(), categoryRequest.getBudgetId())) {
+                throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+            }
+        }
+
         category.setName(categoryRequest.getName());
-        category.setIsDefault(false); // luôn là false vì user không thể tạo default
+        category.setIsDefault(false);
         category.setUpdateAt(LocalDateTime.now());
 
         CategoryGroup categoryGroup = categoryGroupRepository.findById(categoryRequest.getCategoryGroupId())
@@ -107,7 +113,6 @@ public class CategoryService {
                 .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
         category.setBudget(budget);
 
-        // Gán lại user phòng trường hợp null
         category.setUser(user);
 
         Category updated = categoryRepository.save(category);
@@ -121,6 +126,7 @@ public class CategoryService {
                 updated.isDefault()
         );
     }
+
 
 
     // Xoá Category
