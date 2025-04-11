@@ -28,6 +28,15 @@ public class BudgetService {
     private CategoryRepository categoryRepository;
 
     public Budget createBudget(BudgetRequest budgetRequest, User user) {
+        boolean exists = budgetRepository.existsByNameIgnoreCaseAndUser(budgetRequest.getName(), user);
+        if (exists) {
+            throw new AppException(ErrorCode.BUDGET_NAME_ALREADY_EXISTS);
+        }
+
+        if (budgetRequest.getAmount() == null || budgetRequest.getAmount().compareTo(BigDecimal.ONE) < 0) {
+            throw new AppException(ErrorCode.INVALID_AMOUNT);
+        }
+
         Budget budget = new Budget();
         budget.setName(budgetRequest.getName());
         budget.setTotalAmount(budgetRequest.getAmount());
@@ -38,6 +47,45 @@ public class BudgetService {
 
         return budgetRepository.save(budget);
     }
+
+    public Budget updateBudget(Long id, BudgetRequest request, User user) {
+        Budget budget = budgetRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+
+        if (!budget.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_BUDGET_ACTION);
+        }
+
+        boolean exists = budgetRepository.existsByNameIgnoreCaseAndUserAndIdNot(
+                request.getName(), user, id);
+        if (exists) {
+            throw new AppException(ErrorCode.BUDGET_NAME_ALREADY_EXISTS);
+        }
+
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ONE) < 0) {
+            throw new AppException(ErrorCode.INVALID_AMOUNT);
+        }
+
+        budget.setName(request.getName());
+        budget.setTotalAmount(request.getAmount());
+        updateRemainingAmount(budget);
+        budget.setUpdatedAt(LocalDateTime.now());
+
+        return budgetRepository.save(budget);
+    }
+
+
+    public void deleteBudget(Long id, User user) {
+        Budget budget = budgetRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+
+        if (!budget.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_BUDGET_ACTION);
+        }
+
+        budgetRepository.delete(budget);
+    }
+
 
     public void updateRemainingAmount(Budget budget) {
         BigDecimal income = transactionRepository.sumAmountByBudgetIdAndType(budget.getId(), "INCOME");

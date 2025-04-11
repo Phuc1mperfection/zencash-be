@@ -10,5 +10,7 @@ import java.util.UUID;
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
     List<Budget> findByUser(User user);
     List<Budget> findByUserId(UUID userId);
+    boolean existsByNameIgnoreCaseAndUser(String name, User user);
+    boolean existsByNameIgnoreCaseAndUserAndIdNot(String name, User user, Long id);
 
 }

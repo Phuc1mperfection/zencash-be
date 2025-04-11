@@ -37,7 +37,10 @@ public enum ErrorCode {
     UNAUTHORIZED_GROUP_ACTION("You do not have permission to perform this action on category group.", 1203, HttpStatus.BAD_REQUEST),
 
     // ==== 1300-1399: BUDGET ====
-    BUDGET_NOT_FOUND("Budget not found", 1301, HttpStatus.BAD_REQUEST),
+    BUDGET_NOT_FOUND("Budget not found.", 1301, HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED_BUDGET_ACTION("Unauthorized budget action!",1302 ,HttpStatus.BAD_REQUEST),
+    BUDGET_NAME_ALREADY_EXISTS("Budget name already exists.",1303 ,HttpStatus.BAD_REQUEST),
+    INVALID_AMOUNT("Invalid amount.",1304 ,HttpStatus.BAD_REQUEST ),
 
     // ==== 1400-1499: TRANSACTION ====
     TRANSACTION_NOT_FOUND("Transaction not found", 1401, HttpStatus.BAD_REQUEST);

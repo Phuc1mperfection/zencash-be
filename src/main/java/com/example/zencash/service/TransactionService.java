@@ -1,5 +1,6 @@
 package com.example.zencash.service;
 
+import com.example.zencash.dto.CategoryGroupStatisticResponse;
 import com.example.zencash.dto.TransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
 import com.example.zencash.entity.Budget;
@@ -105,6 +106,10 @@ public class TransactionService {
         return transactionRepository.findByBudgetId(budgetId)
                 .stream().map(this::mapToResponse)
                 .toList();
+    }
+
+    public List<CategoryGroupStatisticResponse> getCategoryGroupStatistics(Long budgetId) {
+        return transactionRepository.getStatisticsByBudgetId(budgetId);
     }
 
     private TransactionResponse mapToResponse(Transaction tx) {

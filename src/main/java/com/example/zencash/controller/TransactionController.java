@@ -1,5 +1,6 @@
 package com.example.zencash.controller;
 
+import com.example.zencash.dto.CategoryGroupStatisticResponse;
 import com.example.zencash.dto.TransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
 import com.example.zencash.entity.User;
@@ -58,6 +59,12 @@ public class TransactionController {
 
         Map<String, BigDecimal> result = transactionService.calculateUserIncomeExpense(user);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/statistics/category-group/{budgetId}")
+    public ResponseEntity<List<CategoryGroupStatisticResponse>> getStatisticsByCategoryGroup(@PathVariable Long budgetId) {
+        List<CategoryGroupStatisticResponse> stats = transactionService.getCategoryGroupStatistics(budgetId);
+        return ResponseEntity.ok(stats);
     }
 
 }
