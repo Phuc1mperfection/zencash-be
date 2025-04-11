@@ -14,5 +14,6 @@ public class CategoryResponse {
     private Long categoryGroupId;
     private UUID userId;
     private Long budgetId;
+    private String budgetName;
     private boolean isDefault;
 }

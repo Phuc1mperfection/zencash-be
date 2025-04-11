@@ -71,6 +71,7 @@ public class CategoryService {
                 saved.getCategoryGroup().getId(),
                 saved.getUser() != null ? saved.getUser().getId() : null,
                 saved.getBudget().getId(),
+                saved.getBudget().getName(),
                 saved.isDefault()
         );
     }
@@ -123,6 +124,7 @@ public class CategoryService {
                 updated.getCategoryGroup().getId(),
                 updated.getUser() != null ? updated.getUser().getId() : null,
                 updated.getBudget().getId(),
+                updated.getBudget().getName(),
                 updated.isDefault()
         );
     }
@@ -149,6 +151,7 @@ public class CategoryService {
                         category.getCategoryGroup().getId(),
                         category.getUser() != null ? category.getUser().getId() : null,
                         category.getBudget().getId(),
+                        category.getBudget().getName(),
                         category.isDefault()
                 ))
                 .toList();
@@ -164,6 +167,7 @@ public class CategoryService {
                         category.getCategoryGroup().getId(),
                         category.getUser() != null ? category.getUser().getId() : null,
                         category.getBudget().getId(),
+                        category.getBudget().getName(),
                         category.isDefault()
                 ))
                 .toList();

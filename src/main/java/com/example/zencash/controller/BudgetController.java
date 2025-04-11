@@ -16,7 +16,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -65,17 +67,53 @@ public class BudgetController {
         return ResponseEntity.ok(responses);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<BudgetResponse> updateBudget(
+            @PathVariable Long id,
+            @RequestBody BudgetRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        Budget updated = budgetService.updateBudget(id, request, user);
+
+        BudgetResponse response = new BudgetResponse(
+                updated.getId(),
+                updated.getName(),
+                updated.getTotalAmount(),
+                updated.getRemainingAmount()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBudget(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        budgetService.deleteBudget(id, user);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/total-remaining")
-    public ResponseEntity<BigDecimal> getUserTotalRemaining(
+    public ResponseEntity<Map<String, BigDecimal>> getUserTotalRemaining(
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         BigDecimal totalRemaining = budgetService.calculateUserTotalRemaining(user);
-        return ResponseEntity.ok(totalRemaining);
-    }
 
+        Map<String, BigDecimal> response = new HashMap<>();
+        response.put("total-amount", totalRemaining);
+
+        return ResponseEntity.ok(response);
+    }
 }
 
 
