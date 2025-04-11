@@ -16,31 +16,28 @@ public class CategoryGroupController {
     @Autowired
     private CategoryGroupService categoryGroupService;
 
-    // Thêm CategoryGroup
     @PostMapping
     public ResponseEntity<CategoryGroupResponse> createCategoryGroup(@RequestBody CategoryGroupResponse request) {
         CategoryGroupResponse response = categoryGroupService.createCategoryGroup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // Sửa CategoryGroup
     @PutMapping("/{id}")
     public ResponseEntity<CategoryGroupResponse> update(@PathVariable Long id,
                                                         @RequestBody CategoryGroupResponse request) {
         return ResponseEntity.ok(categoryGroupService.updateCategoryGroup(id, request));
     }
 
-    // Xóa CategoryGroup
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         categoryGroupService.deleteCategoryGroup(id);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping
-    public ResponseEntity<List<CategoryGroupResponse>> getAllCategoryGroups() {
-        List<CategoryGroupResponse> responses = categoryGroupService.getAllCategoryGroups();
+    // Lấy tất cả CategoryGroup theo budgetId
+    @GetMapping("/budget/{budgetId}")
+    public ResponseEntity<List<CategoryGroupResponse>> getAllCategoryGroups(@PathVariable Long budgetId) {
+        List<CategoryGroupResponse> responses = categoryGroupService.getAllCategoryGroups(budgetId);
         return ResponseEntity.ok(responses);
     }
-
 }

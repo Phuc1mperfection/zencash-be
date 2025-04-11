@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
@@ -37,101 +38,66 @@ public class CategoryService {
     private BudgetRepository budgetRepository;
 
     public CategoryResponse addCategory(CategoryRequest categoryRequest) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
 
         CategoryGroup categoryGroup = categoryGroupRepository.findById(categoryRequest.getCategoryGroupId())
-                .orElseThrow(() -> new RuntimeException("Invalid CategoryGroup"));
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
 
         Budget budget = budgetRepository.findById(categoryRequest.getBudgetId())
-                .orElseThrow(() -> new RuntimeException("Invalid Budget"));
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
 
-        // Kiểm tra trùng tên trong cùng 1 budget
         if (categoryRepository.existsByNameIgnoreCaseAndBudgetId(categoryRequest.getName(), budget.getId())) {
             throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
         }
 
         Category category = new Category();
         category.setName(categoryRequest.getName());
-        category.setIsDefault(categoryRequest.isDefault());
+        category.setIcon(categoryRequest.getIcon());
+        category.setDefaultCat(categoryRequest.isDefaultCat());
         category.setCategoryGroup(categoryGroup);
         category.setBudget(budget);
+        category.setCreateAt(LocalDateTime.now());
 
-        if (!categoryRequest.isDefault()) {
+        if (!categoryRequest.isDefaultCat()) {
             category.setUser(user);
         }
 
         Category saved = categoryRepository.save(category);
-
-        return new CategoryResponse(
-                saved.getId(),
-                saved.getName(),
-                saved.getCategoryGroup().getId(),
-                saved.getUser() != null ? saved.getUser().getId() : null,
-                saved.getBudget().getId(),
-                saved.getBudget().getName(),
-                saved.isDefault()
-        );
+        return mapToCategoryResponse(saved);
     }
-
-
 
     public CategoryResponse updateCategory(Long categoryId, CategoryRequest categoryRequest) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-        if (category.isDefault()) {
+        if (category.isDefaultCat()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_DEFAULT_CATEGORY_ACTION);
+        }
+
+        User user = getCurrentUser();
+
+        if (category.getBudget() == null || !category.getBudget().getUser().getId().equals(user.getId())) {
             throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
         }
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        if (category.getUser() == null || !category.getUser().getId().equals(user.getId())) {
-            throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_ACTION);
-        }
-
-        // Nếu tên thay đổi, kiểm tra trùng tên trong cùng budget
-        if (!category.getName().equalsIgnoreCase(categoryRequest.getName())) {
-            if (categoryRepository.existsByNameIgnoreCaseAndBudgetId(categoryRequest.getName(), categoryRequest.getBudgetId())) {
-                throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
-            }
+        if (!category.getName().equalsIgnoreCase(categoryRequest.getName()) &&
+                categoryRepository.existsByNameIgnoreCaseAndBudgetId(categoryRequest.getName(), category.getBudget().getId())) {
+            throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
         }
 
         category.setName(categoryRequest.getName());
-        category.setIsDefault(false);
+        category.setIcon(categoryRequest.getIcon());
+        category.setDefaultCat(false);
         category.setUpdateAt(LocalDateTime.now());
 
         CategoryGroup categoryGroup = categoryGroupRepository.findById(categoryRequest.getCategoryGroupId())
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
         category.setCategoryGroup(categoryGroup);
 
-        Budget budget = budgetRepository.findById(categoryRequest.getBudgetId())
-                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
-        category.setBudget(budget);
-
-        category.setUser(user);
-
         Category updated = categoryRepository.save(category);
-
-        return new CategoryResponse(
-                updated.getId(),
-                updated.getName(),
-                updated.getCategoryGroup().getId(),
-                updated.getUser() != null ? updated.getUser().getId() : null,
-                updated.getBudget().getId(),
-                updated.getBudget().getName(),
-                updated.isDefault()
-        );
+        return mapToCategoryResponse(updated);
     }
 
-
-
-    // Xoá Category
     public boolean deleteCategory(Long categoryId) {
         Optional<Category> existingCategory = categoryRepository.findById(categoryId);
         if (existingCategory.isPresent()) {
@@ -141,37 +107,43 @@ public class CategoryService {
         return false;
     }
 
-    // Lấy tất cả Category theo CategoryGroup
     public List<CategoryResponse> getCategoriesByCategoryGroup(Long categoryGroupId) {
-        List<Category> categories = categoryRepository.findByCategoryGroupId(categoryGroupId);
-        return categories.stream()
-                .map(category -> new CategoryResponse(
-                        category.getId(),
-                        category.getName(),
-                        category.getCategoryGroup().getId(),
-                        category.getUser() != null ? category.getUser().getId() : null,
-                        category.getBudget().getId(),
-                        category.getBudget().getName(),
-                        category.isDefault()
-                ))
-                .toList();
+        categoryGroupRepository.findById(categoryGroupId)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
+
+        return categoryRepository.findByCategoryGroupId(categoryGroupId)
+                .stream().map(this::mapToCategoryResponse)
+                .collect(Collectors.toList());
     }
 
-    // Lấy tất cả Category theo Budget
     public List<CategoryResponse> getCategoriesByBudget(Long budgetId) {
-        List<Category> categories = categoryRepository.findByBudgetId(budgetId);
+        budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+
+        List<Category> categories = categoryRepository.findByBudgetIdOrDefaultCatTrue(budgetId);
         return categories.stream()
-                .map(category -> new CategoryResponse(
-                        category.getId(),
-                        category.getName(),
-                        category.getCategoryGroup().getId(),
-                        category.getUser() != null ? category.getUser().getId() : null,
-                        category.getBudget().getId(),
-                        category.getBudget().getName(),
-                        category.isDefault()
-                ))
-                .toList();
+                .map(this::mapToCategoryResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private CategoryResponse mapToCategoryResponse(Category category) {
+        return new CategoryResponse(
+                category.getId(),
+                category.getName(),
+                category.getIcon(),
+                category.getCategoryGroup().getId(),
+                category.getUser() != null ? category.getUser().getId() : null,
+                category.getBudget().getId(),
+                category.getBudget().getName(),
+                category.isDefaultCat()
+        );
     }
 }
-
-

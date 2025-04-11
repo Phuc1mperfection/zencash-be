@@ -8,8 +8,7 @@ import java.util.List;
 
 @Repository
 public interface CategoryGroupRepository extends JpaRepository<CategoryGroup, Long> {
-    List<CategoryGroup> findByName(String name);
-
-    boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCaseAndBudgetId(String name, Long budgetId);
+    List<CategoryGroup> findByBudgetId(Long budgetId);
 
 }

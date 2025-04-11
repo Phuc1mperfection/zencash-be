@@ -17,7 +17,6 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
-    // Thêm Category
     @PostMapping
     public ResponseEntity<CategoryResponse> addCategory(@RequestBody CategoryRequest categoryRequest) {
         try {
@@ -28,7 +27,6 @@ public class CategoryController {
         }
     }
 
-    // Sửa Category
     @PutMapping("/{categoryId}")
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable Long categoryId,
@@ -41,7 +39,6 @@ public class CategoryController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    // Xoá Category
     @DeleteMapping("/{categoryId}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long categoryId) {
         if (categoryService.deleteCategory(categoryId)) {

@@ -1,11 +1,17 @@
 package com.example.zencash.service;
 
 import com.example.zencash.dto.CategoryGroupResponse;
+import com.example.zencash.entity.Budget;
 import com.example.zencash.entity.CategoryGroup;
+import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
+import com.example.zencash.repository.BudgetRepository;
 import com.example.zencash.repository.CategoryGroupRepository;
+import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,24 +24,52 @@ public class CategoryGroupService {
     @Autowired
     private CategoryGroupRepository categoryGroupRepo;
 
+    @Autowired
+    private BudgetRepository budgetRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     public CategoryGroupResponse createCategoryGroup(CategoryGroupResponse request) {
-        if (categoryGroupRepo.existsByNameIgnoreCase(request.getName())) {
+        User user = getCurrentUser();
+
+        Budget budget = budgetRepository.findById(request.getBudgetId())
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+
+        if (!budget.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_BUDGET_ACCESS);
+        }
+
+        if (categoryGroupRepo.existsByNameIgnoreCaseAndBudgetId(request.getName(), budget.getId())) {
             throw new AppException(ErrorCode.CATEGORY_GROUP_ALREADY_EXISTS);
         }
 
-        CategoryGroup categoryGroup = new CategoryGroup();
-        categoryGroup.setName(request.getName());
-        categoryGroup.setCreateAt(LocalDateTime.now());
-        categoryGroup.setUpdateAt(LocalDateTime.now());
+        CategoryGroup group = new CategoryGroup();
+        group.setName(request.getName());
+        group.setCreateAt(LocalDateTime.now());
+        group.setUpdateAt(LocalDateTime.now());
+        group.setCgDefault(false); // user-created
+        group.setBudget(budget);
 
-        return mapToResponse(categoryGroupRepo.save(categoryGroup));
+        return mapToResponse(categoryGroupRepo.save(group));
     }
 
     public CategoryGroupResponse updateCategoryGroup(Long id, CategoryGroupResponse request) {
+        User user = getCurrentUser();
+
         CategoryGroup categoryGroup = categoryGroupRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
 
-        boolean nameExists = categoryGroupRepo.existsByNameIgnoreCase(request.getName()) &&
+        if (categoryGroup.getCgDefault()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_DEFAULT_CATEGORY_ACTION);
+        }
+
+        if (!categoryGroup.getBudget().getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_GROUP_ACTION);
+        }
+
+        // Check trùng tên (bỏ qua nếu trùng chính nó)
+        boolean nameExists = categoryGroupRepo.existsByNameIgnoreCaseAndBudgetId(request.getName(), categoryGroup.getBudget().getId()) &&
                 !categoryGroup.getName().equalsIgnoreCase(request.getName());
         if (nameExists) {
             throw new AppException(ErrorCode.CATEGORY_GROUP_ALREADY_EXISTS);
@@ -48,24 +82,49 @@ public class CategoryGroupService {
     }
 
     public void deleteCategoryGroup(Long id) {
-        CategoryGroup categoryGroup = categoryGroupRepo.findById(id)
+        User user = getCurrentUser();
+
+        CategoryGroup group = categoryGroupRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_GROUP_NOT_FOUND));
-        categoryGroupRepo.delete(categoryGroup);
+
+        if (group.getCgDefault()) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_DEFAULT_CATEGORY_ACTION);
+        }
+
+        if (!group.getBudget().getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_CATEGORY_GROUP_ACTION);
+        }
+
+        categoryGroupRepo.delete(group);
     }
 
-    public List<CategoryGroupResponse> getAllCategoryGroups() {
-        List<CategoryGroup> groups = categoryGroupRepo.findAll();
-        return groups.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public List<CategoryGroupResponse> getAllCategoryGroups(Long budgetId) {
+        User user = getCurrentUser();
+
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+
+        if (!budget.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED_BUDGET_ACCESS);
+        }
+
+        List<CategoryGroup> groups = categoryGroupRepo.findByBudgetId(budgetId);
+        return groups.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    // Chuyển từ Entity sang Response
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
     private CategoryGroupResponse mapToResponse(CategoryGroup categoryGroup) {
-        CategoryGroupResponse response = new CategoryGroupResponse();
-        response.setId(categoryGroup.getId());
-        response.setName(categoryGroup.getName());
-        return response;
+        return new CategoryGroupResponse(
+                categoryGroup.getId(),
+                categoryGroup.getName(),
+                categoryGroup.getBudget() != null ? categoryGroup.getBudget().getId() : null,
+                categoryGroup.getCgDefault()
+        );
     }
 }
-
