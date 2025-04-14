@@ -60,7 +60,7 @@ public class UserController {
             return ResponseEntity.ok("Change password successfully!");
         } catch (AppException e) {
             return ResponseEntity.status(e.getHttpStatus())
-                    .body(e.getMessage()); // Return error message from the custom exception
+                    .body(e.getMessage());
         }
     }
 

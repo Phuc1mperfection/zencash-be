@@ -30,7 +30,8 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND("Category not found.", 1101, HttpStatus.BAD_REQUEST),
     CATEGORY_ALREADY_EXISTS("Category already exists", 1102, HttpStatus.BAD_REQUEST),
     UNAUTHORIZED_CATEGORY_ACTION("You do not have permission to perform this action on category.", 1103, HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED_DEFAULT_CATEGORY_ACTION("You do not have permission to perform this action on default category.",1104, HttpStatus.BAD_REQUEST ),
+    UNAUTHORIZED_DEFAULT_CATEGORY_ACTION("You do not have permission to perform this action on default category.",1104, HttpStatus.BAD_REQUEST),
+    ICON_NOT_FOUND("Icon not found",1105, HttpStatus.BAD_REQUEST),
 
     // ==== 1200-1299: CATEGORY GROUP ====
     CATEGORY_GROUP_NOT_FOUND("Category group not found.", 1201, HttpStatus.BAD_REQUEST),

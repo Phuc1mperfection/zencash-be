@@ -17,6 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +51,10 @@ public class CategoryService {
 
         if (categoryRepository.existsByNameIgnoreCaseAndBudgetId(categoryRequest.getName(), budget.getId())) {
             throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+        }
+
+        if (isValidIcon(categoryRequest.getIcon())) {
+            throw new AppException(ErrorCode.ICON_NOT_FOUND);
         }
 
         Category category = new Category();
@@ -83,6 +90,10 @@ public class CategoryService {
         if (!category.getName().equalsIgnoreCase(categoryRequest.getName()) &&
                 categoryRepository.existsByNameIgnoreCaseAndBudgetId(categoryRequest.getName(), category.getBudget().getId())) {
             throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+        }
+
+        if (isValidIcon(categoryRequest.getIcon())) {
+            throw new AppException(ErrorCode.ICON_NOT_FOUND);
         }
 
         category.setName(categoryRequest.getName());
@@ -146,4 +157,10 @@ public class CategoryService {
                 category.isDefaultCat()
         );
     }
+
+    private boolean isValidIcon(String iconName) {
+        Path iconPath = Paths.get("src/main/resources/static/image/icon", iconName);
+        return !Files.exists(iconPath);
+    }
+
 }
