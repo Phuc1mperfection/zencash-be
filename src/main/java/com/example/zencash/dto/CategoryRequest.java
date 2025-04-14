@@ -9,7 +9,8 @@ import lombok.Data;
 // CategoryRequest
 public class CategoryRequest {
     private String name;
+    private String icon;
     private Long categoryGroupId;
     private Long budgetId;
-    private boolean isDefault;
+    private boolean isDefaultCat;
 }

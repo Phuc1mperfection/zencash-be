@@ -20,13 +20,16 @@ public class Category {
     private String name;
 
     @Column
+    private String icon;
+
+    @Column
     private LocalDateTime createAt = LocalDateTime.now();
 
     @Column
     private LocalDateTime updateAt = LocalDateTime.now();
 
-    @Column
-    private boolean isDefault;
+    @Column(nullable = false)
+    private boolean defaultCat;
 
     @ManyToOne
     @JoinColumn(name = "cid")
@@ -40,8 +43,5 @@ public class Category {
     @JoinColumn(name = "bid")
     private Budget budget;
 
-    public void setIsDefault(boolean aDefault) {
-
-    }
 }
 

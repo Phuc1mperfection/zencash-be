@@ -18,6 +18,9 @@ public class CategoryGroup {
     @Column
     private String name;
 
+    @Column (nullable = false)
+    private Boolean cgDefault;
+
     @Column
     private LocalDateTime createAt = LocalDateTime.now();
 
@@ -28,7 +31,7 @@ public class CategoryGroup {
     private List<Category> categories;
 
     @ManyToOne
-    @JoinColumn(name = "budget_id")
+    @JoinColumn(name = "bid")
     private Budget budget;
 
 }

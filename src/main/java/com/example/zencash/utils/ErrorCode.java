@@ -30,17 +30,19 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND("Category not found.", 1101, HttpStatus.BAD_REQUEST),
     CATEGORY_ALREADY_EXISTS("Category already exists", 1102, HttpStatus.BAD_REQUEST),
     UNAUTHORIZED_CATEGORY_ACTION("You do not have permission to perform this action on category.", 1103, HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED_DEFAULT_CATEGORY_ACTION("You do not have permission to perform this action on default category.",1104, HttpStatus.BAD_REQUEST ),
 
     // ==== 1200-1299: CATEGORY GROUP ====
     CATEGORY_GROUP_NOT_FOUND("Category group not found.", 1201, HttpStatus.BAD_REQUEST),
     CATEGORY_GROUP_ALREADY_EXISTS("Category group already exists", 1202, HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED_GROUP_ACTION("You do not have permission to perform this action on category group.", 1203, HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED_CATEGORY_GROUP_ACTION("You do not have permission to perform this action on category group.", 1203, HttpStatus.BAD_REQUEST),
 
     // ==== 1300-1399: BUDGET ====
     BUDGET_NOT_FOUND("Budget not found.", 1301, HttpStatus.BAD_REQUEST),
     UNAUTHORIZED_BUDGET_ACTION("Unauthorized budget action!",1302 ,HttpStatus.BAD_REQUEST),
-    BUDGET_NAME_ALREADY_EXISTS("Budget name already exists.",1303 ,HttpStatus.BAD_REQUEST),
+    BUDGET_NAME_ALREADY_EXISTS("Budget already exists.",1303 ,HttpStatus.BAD_REQUEST),
     INVALID_AMOUNT("Invalid amount.",1304 ,HttpStatus.BAD_REQUEST ),
+    UNAUTHORIZED_BUDGET_ACCESS("You do not have permission to perform this action on budget.", 1305, HttpStatus.BAD_REQUEST),
 
     // ==== 1400-1499: TRANSACTION ====
     TRANSACTION_NOT_FOUND("Transaction not found", 1401, HttpStatus.BAD_REQUEST);
