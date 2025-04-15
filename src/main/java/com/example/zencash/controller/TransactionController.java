@@ -45,11 +45,13 @@ public class TransactionController {
         return ResponseEntity.ok(Collections.singletonMap("deleted", deleted));
     }
 
+    //Lấy danh sách transaction theo budget
     @GetMapping("/budget/{budgetId}")
     public ResponseEntity<List<TransactionResponse>> getByBudget(@PathVariable Long budgetId) {
         return ResponseEntity.ok(transactionService.getByBudget(budgetId));
     }
 
+    //Thống kê thu chi toàn bộ
     @GetMapping("/summary")
     public ResponseEntity<Map<String, BigDecimal>> getUserIncomeExpense(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -61,6 +63,7 @@ public class TransactionController {
         return ResponseEntity.ok(result);
     }
 
+    //Thống kê theo CategoryGroup
     @GetMapping("/statistics/category-group/{budgetId}")
     public ResponseEntity<List<CategoryGroupStatisticResponse>> getStatisticsByCategoryGroup(@PathVariable Long budgetId) {
         List<CategoryGroupStatisticResponse> stats = transactionService.getCategoryGroupStatistics(budgetId);

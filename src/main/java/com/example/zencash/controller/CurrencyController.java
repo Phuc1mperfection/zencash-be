@@ -24,16 +24,12 @@ public class CurrencyController {
 
     @PatchMapping("/convert")
     public ResponseEntity<String> convertCurrency(@RequestBody CurrencyConversionRequest conversionRequest) {
-        // Lấy thông tin người dùng từ bearer token
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();  // Email từ token (tên người dùng)
-
-        // Kiểm tra lại targetCurrency
+        String email = authentication.getName();
         if (!conversionRequest.getTargetCurrency().equals("VND") && !conversionRequest.getTargetCurrency().equals("USD")) {
             return ResponseEntity.badRequest().body("Invalid target currency. Must be 'VND' or 'USD'.");
         }
 
-        // Gọi service để chuyển đổi tiền tệ
         currencyConversionService.convertCurrencyForUser(email, conversionRequest.getTargetCurrency());
         return ResponseEntity.ok("Currency conversion successful.");
     }
