@@ -18,7 +18,9 @@ import java.util.List;
 @Service
 public class CurrencyConversionService {
 
-    private static final BigDecimal CONVERSION_RATE = BigDecimal.valueOf(25000); // Tỷ giá VND <-> USD
+    private static final BigDecimal CONVERSION_RATE = BigDecimal.valueOf(25000);
+    private static final int USD_SCALE = 2;
+    private static final int VND_SCALE = 0;
 
     @Autowired
     private UserRepository userRepository;
@@ -29,59 +31,67 @@ public class CurrencyConversionService {
     @Autowired
     private BudgetRepository budgetRepository;
 
-    // Chuyển đổi tiền tệ của người dùng
     public void convertCurrencyForUser(String email, String targetCurrency) {
-        // Lấy thông tin người dùng từ email (từ bearer token)
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        String currentCurrency = user.getCurrency(); // Lấy mệnh giá hiện tại của user
+        String currentCurrency = user.getCurrency() == null ? "VND" : user.getCurrency();
 
-        // Nếu người dùng chưa có mệnh giá, mặc định là VND
-        if (currentCurrency == null) {
-            currentCurrency = "VND";
-        }
+        if (currentCurrency.equals(targetCurrency)) return;
 
-        // Nếu currency hiện tại trùng với target, không cần chuyển đổi
-        if (currentCurrency.equals(targetCurrency)) {
-            return;
-        }
-
-        // Cập nhật mệnh giá trong các giao dịch của người dùng theo budgetId
         List<Budget> budgets = budgetRepository.findByUserId(user.getId());
+
         for (Budget budget : budgets) {
-            List<Transaction> transactions = transactionRepository.findByBudgetId(budget.getId());
-            for (Transaction transaction : transactions) {
-                BigDecimal amount = transaction.getAmount();
-                BigDecimal convertedAmount = convertAmount(amount, currentCurrency, targetCurrency);
-                transaction.setAmount(convertedAmount);
-                transactionRepository.save(transaction); // Lưu thay đổi vào cơ sở dữ liệu
-            }
-
-            // Cập nhật mệnh giá trong ngân sách của người dùng
-            BigDecimal remainingAmount = budget.getRemainingAmount();
-            BigDecimal convertedRemainingAmount = convertAmount(remainingAmount, currentCurrency, targetCurrency);
-            budget.setRemainingAmount(convertedRemainingAmount);
-
-            BigDecimal totalAmount = budget.getTotalAmount();
-            BigDecimal convertedTotalAmount = convertAmount(totalAmount, currentCurrency, targetCurrency);
-            budget.setTotalAmount(convertedTotalAmount);
-
-            budgetRepository.save(budget); // Lưu thay đổi ngân sách
+            convertTransactions(budget.getId(), currentCurrency, targetCurrency);
+            convertBudgetAmounts(budget, currentCurrency, targetCurrency);
         }
 
-        // Cập nhật lại mệnh giá của người dùng
         user.setCurrency(targetCurrency);
         userRepository.save(user);
     }
 
+    private void convertTransactions(Long budgetId, String fromCurrency, String toCurrency) {
+        List<Transaction> transactions = transactionRepository.findByBudgetId(budgetId);
+        for (Transaction transaction : transactions) {
+            BigDecimal original = transaction.getAmount();
+            BigDecimal converted = convertAmount(original, fromCurrency, toCurrency);
+
+            if (original.compareTo(converted) != 0) {
+                transaction.setAmount(converted);
+                transactionRepository.save(transaction);
+            }
+        }
+    }
+
+    private void convertBudgetAmounts(Budget budget, String fromCurrency, String toCurrency) {
+        boolean updated = false;
+
+        BigDecimal newRemaining = convertAmount(budget.getRemainingAmount(), fromCurrency, toCurrency);
+        if (budget.getRemainingAmount().compareTo(newRemaining) != 0) {
+            budget.setRemainingAmount(newRemaining);
+            updated = true;
+        }
+
+        BigDecimal newTotal = convertAmount(budget.getTotalAmount(), fromCurrency, toCurrency);
+        if (budget.getTotalAmount().compareTo(newTotal) != 0) {
+            budget.setTotalAmount(newTotal);
+            updated = true;
+        }
+
+        if (updated) {
+            budgetRepository.save(budget);
+        }
+    }
+
     private BigDecimal convertAmount(BigDecimal amount, String fromCurrency, String toCurrency) {
         if (fromCurrency.equals("VND") && toCurrency.equals("USD")) {
-            return amount.divide(CONVERSION_RATE, 2, RoundingMode.HALF_UP); // Chuyển từ VND sang USD
+            return amount.divide(CONVERSION_RATE, USD_SCALE, RoundingMode.HALF_UP);
         }
+
         if (fromCurrency.equals("USD") && toCurrency.equals("VND")) {
-            return amount.multiply(CONVERSION_RATE); // Chuyển từ USD sang VND
+            return amount.multiply(CONVERSION_RATE).setScale(VND_SCALE, RoundingMode.HALF_UP);
         }
-        return amount; // Nếu cùng tiền tệ, không thay đổi
+
+        return amount;
     }
 }

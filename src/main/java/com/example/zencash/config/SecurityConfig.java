@@ -44,6 +44,10 @@ public class SecurityConfig {
             "/api/auth/refresh-token",
             "/api/auth/signup",
             "/api/auth/login",
+            "/api/icons",
+            "/api/icons/",
+            "/api/icons/{filename:.+}",
+
     };
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {

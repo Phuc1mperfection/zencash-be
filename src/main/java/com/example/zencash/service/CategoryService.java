@@ -159,8 +159,9 @@ public class CategoryService {
     }
 
     private boolean isValidIcon(String iconName) {
-        Path iconPath = Paths.get("src/main/resources/static/image/icon", iconName);
+        Path iconPath = Paths.get(System.getProperty("user.dir"), "image", "icon", iconName);
         return !Files.exists(iconPath);
     }
+
 
 }
