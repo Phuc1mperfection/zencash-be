@@ -45,7 +45,7 @@ public class UserController {
         if (userDetails == null) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
-        UserResponse response = userService.updateUser(userDetails.getUsername(), request);
+        UserResponse response = userService.updateUser(userDetails.getUsername(), request, request.getAvatar());
         return ResponseEntity.ok(response);
     }
 

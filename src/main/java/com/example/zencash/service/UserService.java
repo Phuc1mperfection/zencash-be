@@ -29,34 +29,49 @@ public class UserService {
     }
 
     // Cập nhật thông tin người dùng
-    public UserResponse updateUser(String email, UpdateUserRequest request) {
+    public UserResponse updateUser(String email, UpdateUserRequest request, String avatarFilename) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
         if (request.getFullname() != null) {
             user.setFullname(request.getFullname());
         }
+
         if (request.getUsername() != null) {
             user.setUsername(request.getUsername());
         }
-        if (user.getAvatar() == null || user.getAvatar().isBlank()) {
-            user.setAvatar("hinh-cute-meo.jpg");
+
+        // Cập nhật avatar nếu có tên file mới
+        if (avatarFilename != null && !avatarFilename.isBlank()) {
+            user.setAvatar(avatarFilename);
+        } else if (user.getAvatar() == null || user.getAvatar().isBlank()) {
+            user.setAvatar("hinh-cute-meo.jpg"); // avatar mặc định nếu chưa có
         }
+
         if (request.getCurrency() != null) {
             user.setCurrency(request.getCurrency());
         }
 
-
-        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
-            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                throw new AppException(ErrorCode.EMAIL_TAKEN);
-            }
+        if (request.getEmail() != null && !request.getEmail().equalsIgnoreCase(user.getEmail())) {
+            userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
+                if (!existingUser.getId().equals(user.getId())) {
+                    throw new AppException(ErrorCode.EMAIL_TAKEN);
+                }
+            });
             user.setEmail(request.getEmail());
         }
 
         userRepository.save(user);
-        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(),user.getCurrency());
+
+        return new UserResponse(
+                user.getEmail(),
+                user.getUsername(),
+                user.getFullname(),
+                user.getAvatar(),
+                user.getCurrency()
+        );
     }
+
 
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
