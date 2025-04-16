@@ -3,13 +3,16 @@ package com.example.zencash.service;
 import com.example.zencash.dto.StatisticResultResponse;
 import com.example.zencash.dto.TopTransactionResponse;
 import com.example.zencash.entity.Transaction;
+import com.example.zencash.entity.User;
 import com.example.zencash.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -67,5 +70,26 @@ public class StatisticService {
 
         return new StatisticResultResponse(transactions, income, expense);
     }
+
+    public Map<String, BigDecimal> calculateUserIncomeExpense(User user) {
+        List<Transaction> transactions = transactionRepository.findAllByUser(user);
+
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
+
+        for (Transaction tx : transactions) {
+            if ("INCOME".equalsIgnoreCase(tx.getType())) {
+                totalIncome = totalIncome.add(tx.getAmount());
+            } else if ("EXPENSE".equalsIgnoreCase(tx.getType())) {
+                totalExpense = totalExpense.add(tx.getAmount());
+            }
+        }
+
+        Map<String, BigDecimal> result = new HashMap<>();
+        result.put("income", totalIncome);
+        result.put("expense", totalExpense);
+        return result;
+    }
+
 }
 
