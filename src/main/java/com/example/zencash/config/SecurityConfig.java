@@ -45,8 +45,9 @@ public class SecurityConfig {
             "/api/auth/signup",
             "/api/auth/login",
             "/api/icons",
-            "/api/icons/",
+            "/api/avatar/",
             "/api/icons/{filename:.+}",
+            "/api/avatar/{filename:.+}",
 
     };
 

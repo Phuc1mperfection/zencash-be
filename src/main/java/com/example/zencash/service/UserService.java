@@ -39,13 +39,18 @@ public class UserService {
         if (request.getUsername() != null) {
             user.setUsername(request.getUsername());
         }
-        if (user.getAvatar() == null || user.getAvatar().isBlank()) {
+
+        // Xử lý avatar đúng logic
+        if ((request.getAvatar() == null || request.getAvatar().isBlank()) &&
+                (user.getAvatar() == null || user.getAvatar().isBlank())) {
             user.setAvatar("hinh-cute-meo.jpg");
+        } else if (request.getAvatar() != null && !request.getAvatar().isBlank()) {
+            user.setAvatar(request.getAvatar());
         }
+
         if (request.getCurrency() != null) {
             user.setCurrency(request.getCurrency());
         }
-
 
         if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -55,8 +60,9 @@ public class UserService {
         }
 
         userRepository.save(user);
-        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(),user.getCurrency());
+        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(), user.getCurrency());
     }
+
 
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
