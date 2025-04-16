@@ -1,12 +1,10 @@
 package com.example.zencash.service;
 
-import com.example.zencash.dto.CategoryGroupStatisticResponse;
 import com.example.zencash.dto.TransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
 import com.example.zencash.entity.Budget;
 import com.example.zencash.entity.Category;
 import com.example.zencash.entity.Transaction;
-import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.BudgetRepository;
 import com.example.zencash.repository.CategoryRepository;
@@ -15,11 +13,8 @@ import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class TransactionService {
@@ -81,35 +76,10 @@ public class TransactionService {
         return true;
     }
 
-    public Map<String, BigDecimal> calculateUserIncomeExpense(User user) {
-        List<Transaction> transactions = transactionRepository.findAllByUser(user);
-
-        BigDecimal totalIncome = BigDecimal.ZERO;
-        BigDecimal totalExpense = BigDecimal.ZERO;
-
-        for (Transaction tx : transactions) {
-            if ("INCOME".equalsIgnoreCase(tx.getType())) {
-                totalIncome = totalIncome.add(tx.getAmount());
-            } else if ("EXPENSE".equalsIgnoreCase(tx.getType())) {
-                totalExpense = totalExpense.add(tx.getAmount());
-            }
-        }
-
-        Map<String, BigDecimal> result = new HashMap<>();
-        result.put("income", totalIncome);
-        result.put("expense", totalExpense);
-        return result;
-    }
-
-
     public List<TransactionResponse> getByBudget(Long budgetId) {
         return transactionRepository.findByBudgetId(budgetId)
                 .stream().map(this::mapToResponse)
                 .toList();
-    }
-
-    public List<CategoryGroupStatisticResponse> getCategoryGroupStatistics(Long budgetId) {
-        return transactionRepository.getStatisticsByBudgetId(budgetId);
     }
 
     private TransactionResponse mapToResponse(Transaction tx) {
