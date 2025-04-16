@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
     private final AuthService authService;
-    private static final String AVATAR_DIR = "../image/avatar/";
 
     public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService, AuthService authService) {
         this.userService = userService;
@@ -46,9 +45,10 @@ public class UserController {
         if (userDetails == null) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
-        UserResponse response = userService.updateUser(userDetails.getUsername(), request, request.getAvatar());
+        UserResponse response = userService.updateUser(userDetails.getUsername(), request);
         return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
@@ -74,5 +74,4 @@ public class UserController {
         String token = authHeader.substring(7);
         return ResponseEntity.ok(authService.deleteAccount(token));
     }
-
 }
