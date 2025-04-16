@@ -38,6 +38,9 @@ public class AuthService {
         try {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             user.setRoles(Collections.singleton("USER"));
+            if (user.getAvatar() == null || user.getAvatar().isBlank()) {
+                user.setAvatar("hinh-cute-meo.jpg");
+            }
             userRepository.save(user);
             return "User registered successfully!";
         } catch (Exception e) {

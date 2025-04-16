@@ -13,6 +13,7 @@ public class UpdateUserRequest {
     private String email;
 
     private String fullname;
+    private String avatar;
     private String currency;
     private String language;
 

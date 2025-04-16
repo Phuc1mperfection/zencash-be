@@ -39,6 +39,9 @@ public class User {
     @Column
     private String fullname;
 
+    @Column
+    private String avatar;
+
     @Column(nullable = false)
     private String currency = "VND"; //
 

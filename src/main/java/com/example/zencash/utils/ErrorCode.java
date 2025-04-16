@@ -16,6 +16,7 @@ public enum ErrorCode {
     INVALID_CREDENTIALS("Invalid email or password!", 1006, HttpStatus.UNAUTHORIZED),
     TOKEN_EXPIRED("Token has expired", 1007, HttpStatus.UNAUTHORIZED),
     INVALID_TOKEN("Invalid token!", 1008, HttpStatus.FORBIDDEN),
+    FILE_UPLOAD_EMPTY("Uploaded file is empty",1009, HttpStatus.BAD_REQUEST),
 
     USERNAME_REQUIRED("Username cannot be empty!", 1009, HttpStatus.BAD_REQUEST),
     EMAIL_REQUIRED("Email cannot be empty!", 1010, HttpStatus.BAD_REQUEST),
