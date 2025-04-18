@@ -47,7 +47,9 @@ public enum ErrorCode {
     UNAUTHORIZED_BUDGET_ACCESS("You do not have permission to perform this action on budget.", 1305, HttpStatus.BAD_REQUEST),
 
     // ==== 1400-1499: TRANSACTION ====
-    TRANSACTION_NOT_FOUND("Transaction not found", 1401, HttpStatus.BAD_REQUEST);
+    TRANSACTION_NOT_FOUND("Transaction not found", 1401, HttpStatus.BAD_REQUEST),
+    INVALID_DATA("Money not found",1402,HttpStatus.NOT_FOUND),
+    AI_RESPONSE_INVALID("AIIIII not found",1403,HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final int code;

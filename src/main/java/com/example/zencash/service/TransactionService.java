@@ -1,6 +1,7 @@
 package com.example.zencash.service;
 
 import com.example.zencash.dto.CategoryGroupStatisticResponse;
+import com.example.zencash.dto.InvoiceTransactionRequest;
 import com.example.zencash.dto.TransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
 import com.example.zencash.entity.Budget;
@@ -11,15 +12,21 @@ import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.BudgetRepository;
 import com.example.zencash.repository.CategoryRepository;
 import com.example.zencash.repository.TransactionRepository;
+import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static jakarta.xml.bind.DatatypeConverter.parseDate;
 
 @Service
 public class TransactionService {
@@ -27,7 +34,11 @@ public class TransactionService {
     @Autowired private TransactionRepository transactionRepository;
     @Autowired private CategoryRepository categoryRepository;
     @Autowired private BudgetRepository budgetRepository;
+    @Autowired private UserRepository userRepository;
     @Autowired private BudgetService budgetService;
+
+
+    @Autowired private AIService aiService;
 
     public TransactionResponse createTransaction(TransactionRequest request) {
         Budget budget = budgetService.getBudgetById(request.getBudgetId());
@@ -123,6 +134,99 @@ public class TransactionService {
                 tx.getDate()
         );
     }
+    private BigDecimal parseAmount(String text) {
+        // Tìm số dạng 120.00, 1,200.50, 120.000đ, $120.00,...
+        Pattern pattern = Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d+)?|\\d+)");
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            String raw = matcher.group(1)
+                    .replace(",", "")   // bỏ dấu phẩy ngăn cách nghìn
+                    .replace("$", "")   // nếu có dấu $
+                    .replace("đ", "")   // nếu có dấu đ
+                    .trim();
+            return new BigDecimal(raw);
+        }
+        throw new AppException(ErrorCode.INVALID_DATA);
+    }
+
+
+    private String parseNote(String text) {
+        // Tùy bạn, hoặc chỉ cần cắt dòng đầu tiên
+        return text.lines().findFirst().orElse("Invoice");
+    }
+
+    private LocalDate parseDate(String text) {
+        Pattern pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})");
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return LocalDate.parse(matcher.group(1));
+        }
+        return LocalDate.now(); // fallback nếu không tìm được
+    }
+
+    public TransactionResponse createFromInvoiceText(String text, String email) {
+        // Gửi văn bản OCR cho AI để xử lý thông tin
+        String refinedText = aiService.sendMessageToAI(text, email);
+
+        // Tiến hành xử lý refinedText để tách các trường cần thiết như amount, date, note...
+        String[] lines = refinedText.split("\n");
+
+        BigDecimal amount = BigDecimal.ZERO;
+        String note = "";
+        LocalDate date = LocalDate.now();
+
+        for (String line : lines) {
+            line = line.trim();
+
+            if (line.toLowerCase().startsWith("date:") || line.toLowerCase().contains("ngày")) {
+                date = parseDate(line);
+            }  else if (line.toLowerCase().contains("amount") || line.toLowerCase().contains("số tiền")) {
+
+            amount = parseAmount(line);
+            } else if (line.toLowerCase().contains("note")) {
+                note = parseNote(line);
+            }
+        }
+        System.out.println("RefinedText from AI:\n" + refinedText);
+
+
+        // Tạo request DTO cho invoice
+        InvoiceTransactionRequest invoiceRequest = new InvoiceTransactionRequest();
+        invoiceRequest.setAmount(amount);
+        invoiceRequest.setNote(note);
+        invoiceRequest.setDate(date);
+        invoiceRequest.setType("EXPENSE");
+        invoiceRequest.setEmail(email);
+        System.out.println("Parsed amount = " + amount);
+
+        return createTransactionFromInvoice(invoiceRequest);
+    }
+
+    public TransactionResponse createTransactionFromInvoice(InvoiceTransactionRequest request) {
+        User user = getUserByEmail(request.getEmail());
+
+        Budget budget = budgetRepository.findFirstByUser(user)
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+
+        Category category = categoryRepository.findFirstByUser(user)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        TransactionRequest txRequest = new TransactionRequest();
+        txRequest.setAmount(request.getAmount());
+        txRequest.setNote(request.getNote());
+        txRequest.setDate(request.getDate());
+        txRequest.setType(request.getType());
+        txRequest.setBudgetId(budget.getId());
+        txRequest.setCategoryId(category.getId());
+
+        return createTransaction(txRequest);
+    }
+    private User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
+
+
 }
 
 

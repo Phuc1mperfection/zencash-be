@@ -7,6 +7,7 @@ import com.example.zencash.exception.AppException;
 import com.example.zencash.repository.BudgetRepository;
 import com.example.zencash.repository.CategoryRepository;
 import com.example.zencash.repository.TransactionRepository;
+import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,8 @@ public class BudgetService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+    @Autowired
+    private UserRepository userRepository ;
 
     public Budget createBudget(BudgetRequest budgetRequest, User user) {
         boolean exists = budgetRepository.existsByNameIgnoreCaseAndUser(budgetRequest.getName(), user);
@@ -120,6 +123,10 @@ public class BudgetService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+    }
 }
 
 

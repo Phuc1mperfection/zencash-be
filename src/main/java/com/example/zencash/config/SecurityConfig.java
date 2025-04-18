@@ -46,8 +46,10 @@ public class SecurityConfig {
             "/api/auth/login",
             "/api/icons",
             "/api/avatar/",
+            "/api/invoices/",
             "/api/icons/{filename:.+}",
             "/api/avatar/{filename:.+}",
+            "/api/invoices/{filename:.+}",
 
     };
 
