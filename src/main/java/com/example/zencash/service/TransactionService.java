@@ -1,9 +1,6 @@
 package com.example.zencash.service;
 
-import com.example.zencash.dto.CategoryGroupStatisticResponse;
-import com.example.zencash.dto.InvoiceTransactionRequest;
-import com.example.zencash.dto.TransactionRequest;
-import com.example.zencash.dto.TransactionResponse;
+import com.example.zencash.dto.*;
 import com.example.zencash.entity.Budget;
 import com.example.zencash.entity.Category;
 import com.example.zencash.entity.Transaction;
@@ -135,19 +132,42 @@ public class TransactionService {
         );
     }
     private BigDecimal parseAmount(String text) {
-        // Tìm số dạng 120.00, 1,200.50, 120.000đ, $120.00,...
+        // Xác định loại tiền
+        boolean isUSD = text.contains("$") || text.toLowerCase().contains("usd");
+        boolean isVND = text.contains("đ") || text.toLowerCase().contains("vnd") || text.contains("₫");
+
+        // Regex tìm số có thể có cả dấu ngăn cách hoặc phần thập phân
         Pattern pattern = Pattern.compile("(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d+)?|\\d+)");
         Matcher matcher = pattern.matcher(text);
+
         if (matcher.find()) {
-            String raw = matcher.group(1)
-                    .replace(",", "")   // bỏ dấu phẩy ngăn cách nghìn
-                    .replace("$", "")   // nếu có dấu $
-                    .replace("đ", "")   // nếu có dấu đ
-                    .trim();
+            String raw = matcher.group(1).trim();
+
+            if (isUSD) {
+                // USD thường dùng dấu phẩy cho nghìn, chấm cho phần thập phân
+                if (raw.contains(",")) {
+                    long commaCount = raw.chars().filter(ch -> ch == ',').count();
+                    long dotCount = raw.chars().filter(ch -> ch == '.').count();
+
+                    if (commaCount == 1 && dotCount == 0) {
+                        // Ví dụ: "50,00" (kiểu EU) => "50.00"
+                        raw = raw.replace(",", ".");
+                    } else {
+                        // Ví dụ: "1,000.50" => "1000.50"
+                        raw = raw.replace(",", "");
+                    }
+                }
+            } else {
+                // VND thường dùng dấu chấm hoặc dấu phẩy cho hàng nghìn => bỏ hết
+                raw = raw.replace(".", "").replace(",", "");
+            }
+
             return new BigDecimal(raw);
         }
+
         throw new AppException(ErrorCode.INVALID_DATA);
     }
+
 
 
     private String parseNote(String text) {
@@ -205,10 +225,16 @@ public class TransactionService {
     public TransactionResponse createTransactionFromInvoice(InvoiceTransactionRequest request) {
         User user = getUserByEmail(request.getEmail());
 
-        Budget budget = budgetRepository.findFirstByUser(user)
+        Budget budget = (request.getBudgetId() != null)
+                ? budgetRepository.findById(request.getBudgetId())
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND))
+                : budgetRepository.findFirstByUser(user)
                 .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
 
-        Category category = categoryRepository.findFirstByUser(user)
+        Category category = (request.getCategoryId() != null)
+                ? categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND))
+                : categoryRepository.findFirstByUser(user)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
         TransactionRequest txRequest = new TransactionRequest();
@@ -221,11 +247,58 @@ public class TransactionService {
 
         return createTransaction(txRequest);
     }
+
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
+    public InvoiceExtractedDataResponse extractInvoiceData(String text, String email) {
+        // Gửi văn bản OCR đến AI để refine
+        String refinedText = aiService.sendMessageToAI(text, email);
+        System.out.println("RefinedText from AI:\n" + refinedText);
+
+        // Mặc định
+        BigDecimal amount = BigDecimal.ZERO;
+        String note = "";
+        LocalDate date = LocalDate.now();
+
+        // Phân tích văn bản đã refine từ AI
+        String[] lines = refinedText.split("\n");
+
+        for (String line : lines) {
+            line = line.trim();
+
+            if (line.toLowerCase().contains("amount") || line.toLowerCase().contains("số tiền")) {
+                amount = parseAmount(line); // tự viết hàm parseAmount
+            } else if (line.toLowerCase().contains("date") || line.toLowerCase().contains("ngày")) {
+                date = parseDate(line); // tự viết hàm parseDate
+            } else if (line.toLowerCase().contains("note") || line.toLowerCase().contains("ghi chú")) {
+                note = parseNote(line); // tự viết hàm parseNote
+            }
+        }
+
+        // Lấy budgetId và categoryId mặc định (có thể để client chọn lại sau)
+        User user = getUserByEmail(email);
+
+        Long budgetId = budgetRepository.findFirstByUser(user)
+                .map(Budget::getId)
+                .orElse(null);
+
+        Long categoryId = categoryRepository.findFirstByUser(user)
+                .map(Category::getId)
+                .orElse(null);
+
+        // Trả về object để client confirm
+        return InvoiceExtractedDataResponse.builder()
+                .amount(amount)
+                .note(note)
+                .date(date)
+                .type("EXPENSE")
+                .budgetId(budgetId)
+                .categoryId(categoryId)
+                .build();
+    }
 
 }
 

@@ -12,4 +12,6 @@ public class InvoiceTransactionRequest {
     private LocalDate date;
     private String type; // EXPENSE hoặc INCOME
     private String email;
+    private Long budgetId;
+    private Long categoryId;
 }

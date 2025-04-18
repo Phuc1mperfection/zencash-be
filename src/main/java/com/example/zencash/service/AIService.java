@@ -23,12 +23,15 @@ public class AIService {
     public String sendMessageToAI(String text, String email) {
         // Chuẩn bị body JSON
         String jsonBody = String.format("""
-            {
-              "contents": [{
-                "parts":[{"text": "Extract amount, date, and a short note from the following invoice text for user %s:\\n%s"}]
-              }]
-            }
-            """, email, text.replace("\"", "\\\""));
+{
+  "contents": [{
+    "parts": [{
+      "text": "From the invoice text below, extract:\n- The **total amount** (detect and return correct number for both VND and USD. USD might look like $50,00 or $1,200.50. VND might look like 8.000.000đ or 8,000,000 VND).\n- A **short note**.\n- The **date** if available (in dd/MM/yyyy or any common format).\n\nUser: %s\nInvoice:\n%s"
+    }]
+  }]
+}
+""", email, text.replace("\"", "\\\""));
+
 
         // Headers
         HttpHeaders headers = new HttpHeaders();

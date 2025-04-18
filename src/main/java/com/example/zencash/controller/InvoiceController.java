@@ -1,11 +1,14 @@
 package com.example.zencash.controller;
 
+import com.example.zencash.dto.InvoiceExtractedDataResponse;
+import com.example.zencash.dto.InvoiceTransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
 import com.example.zencash.entity.Transaction;
 import com.example.zencash.service.OCRService;
 import com.example.zencash.service.TransactionService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,34 +34,58 @@ public class InvoiceController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadInvoice(@RequestParam("file") MultipartFile file,
-                                           @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> uploadInvoiceForExtraction(@RequestParam("file") MultipartFile file,
+                                                        @AuthenticationPrincipal UserDetails userDetails) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body("No file uploaded");
         }
 
-        // Tạo đường dẫn thư mục lưu ảnh hóa đơn
-        String INVOICE_DIR = System.getProperty("user.dir") + "/image/invoice/";
-        File folder = new File(INVOICE_DIR);
-
-
-        // Tạo tên file duy nhất
-        String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        File targetFile = new File(INVOICE_DIR + filename);
-
         try {
-            file.transferTo(targetFile); // Lưu file vào ổ cứng
+            // Tạo đường dẫn thư mục lưu ảnh hóa đơn
+            String INVOICE_DIR = System.getProperty("user.dir") + "/image/invoice/";
+            File folder = new File(INVOICE_DIR);
+            if (!folder.exists()) folder.mkdirs();
 
-            // OCR để lấy text
-            String extractedText = ocrService.extractTextFromImage(targetFile); // Lưu ý: OCR từ File chứ không phải MultipartFile
+            // Tạo tên file duy nhất
+            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            File targetFile = new File(INVOICE_DIR + filename);
 
-            // Parse text → transaction
-            TransactionResponse transaction = transactionService.createFromInvoiceText(extractedText, userDetails.getUsername());
+            // Lưu file vào ổ cứng
+            file.transferTo(targetFile);
 
-            return ResponseEntity.ok(transaction);
+            // Trích xuất văn bản từ ảnh
+            String extractedText = ocrService.extractTextFromImage(targetFile);
+
+            // Gửi văn bản OCR cho AI để phân tích và trích xuất dữ liệu
+            InvoiceExtractedDataResponse extractedData = transactionService.extractInvoiceData(
+                    extractedText, userDetails.getUsername()
+            );
+
+            // Trả về dữ liệu để client xác nhận
+            return ResponseEntity.ok(extractedData);
 
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Upload or OCR failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/confirm")
+    public ResponseEntity<TransactionResponse> confirmExtractedInvoice(
+            @RequestBody InvoiceTransactionRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        try {
+            // Gắn email từ token vào request để đảm bảo tính xác thực
+            request.setEmail(userDetails.getUsername());
+
+            // Gọi service tạo transaction từ thông tin hóa đơn đã xác nhận
+            TransactionResponse response = transactionService.createTransactionFromInvoice(request);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
     }
     @GetMapping("/{filename:.+}")
