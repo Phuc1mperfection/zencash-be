@@ -69,5 +69,15 @@ public class TransactionController {
         List<CategoryGroupStatisticResponse> stats = transactionService.getCategoryGroupStatistics(budgetId);
         return ResponseEntity.ok(stats);
     }
+    @GetMapping("/top-expenses")
+    public ResponseEntity<List<TransactionResponse>> getTopExpenses(
+            @RequestParam(defaultValue = "10") int limit,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        return ResponseEntity.ok(transactionService.getTopExpenses(limit, user));
+    }
 
 }

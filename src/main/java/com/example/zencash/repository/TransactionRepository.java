@@ -3,6 +3,7 @@ package com.example.zencash.repository;
 import com.example.zencash.dto.CategoryGroupStatisticResponse;
 import com.example.zencash.entity.Transaction;
 import com.example.zencash.entity.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +34,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     WHERE t.budget.id = :budgetId
     GROUP BY cg.id, cg.name""")
     List<CategoryGroupStatisticResponse> getStatisticsByBudgetId(@Param("budgetId") Long budgetId);
+
+    @Query("SELECT t FROM Transaction t WHERE t.budget.user = :user AND t.type = :type ORDER BY t.amount DESC")
+    List<Transaction> findTopByUserAndTypeOrderByAmountDesc(@Param("user") User user,
+                                                            @Param("type") String type,
+                                                            Pageable pageable);
+
+    // Hoặc nếu không dùng @Query thì có thể dùng cách đặt tên sau (nếu JPA hỗ trợ):
+    List<Transaction> findByBudget_UserAndTypeOrderByAmountDesc(User user, String type, Pageable pageable);
+
 }

@@ -12,6 +12,8 @@ import com.example.zencash.repository.TransactionRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -299,6 +301,18 @@ public class TransactionService {
                 .categoryId(categoryId)
                 .build();
     }
+    public List<TransactionResponse> getTopExpenses(int limit, User user) {
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Transaction> expenses = transactionRepository.findByBudget_UserAndTypeOrderByAmountDesc(user, "EXPENSE", pageable);
+        return expenses.stream().map(this::mapToResponse).toList();
+    }
+//    public List<TransactionResponse> getTopExpenses(int limit, User user) {
+//        List<Transaction> expenses = transactionRepository.findTopByUserAndTypeOrderByAmountDesc(user, "EXPENSE", limit);
+//        return expenses.stream()
+//                .map(this::mapToResponse)
+//                .toList();
+//    }
+
 
 }
 
