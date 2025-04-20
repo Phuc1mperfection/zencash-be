@@ -6,6 +6,7 @@ import com.example.zencash.dto.BudgetResponse;
 import com.example.zencash.entity.Budget;
 import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
+import com.example.zencash.repository.TransactionRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.service.BudgetService;
 import com.example.zencash.utils.ErrorCode;
@@ -29,9 +30,11 @@ public class BudgetController {
     private BudgetService budgetService;
 
     private final UserRepository userRepository;
+    private final TransactionRepository transactionRepository;
 
-    public BudgetController(UserRepository userRepository) {
+    public BudgetController(UserRepository userRepository, TransactionRepository transactionRepository) {
         this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @PostMapping
@@ -136,23 +139,27 @@ public class BudgetController {
         UUID userId = user.getId(); // userId là UUID
 
         // Lấy thông tin Budget từ service theo userId và budgetId
-        Optional<Budget> budget = budgetService.getBudgetByIdAndUser(userId, id);
+        Optional<Budget> budgetOptional = budgetService.getBudgetByIdAndUser(userId, id);
 
-        if (budget.isEmpty()) {
+        if (budgetOptional.isEmpty()) {
             throw new AppException(ErrorCode.BUDGET_NOT_FOUND);
         }
 
         // Lấy thông tin ngân sách
-        BigDecimal totalAmount = budget.get().getTotalAmount();
-        BigDecimal remainingAmount = budget.get().getRemainingAmount();
+        Budget budget = budgetOptional.get();
+        BigDecimal totalAmount = budget.getTotalAmount();
+        BigDecimal remainingAmount = budget.getRemainingAmount();
 
-        // Kiểm tra và tính toán spentAmount
-        BigDecimal spentAmount = totalAmount.subtract(remainingAmount);
+        // Tính tổng chi tiêu từ các giao dịch "EXPENSE" của budget
+        BigDecimal spentAmount = transactionRepository.sumAmountByBudgetIdAndType(budget.getId(), "EXPENSE");
 
         // Nếu chi tiêu vượt quá ngân sách, spentAmount không thể âm
-        if (spentAmount.compareTo(BigDecimal.ZERO) < 0) {
+        if (spentAmount == null || spentAmount.compareTo(BigDecimal.ZERO) < 0) {
             spentAmount = BigDecimal.ZERO;
         }
+
+        // Tính tổng còn lại
+        BigDecimal totalRemaining = totalAmount.subtract(spentAmount);
 
         // Tính toán tỷ lệ chi tiêu
         int spentPercentage = 0;
@@ -166,30 +173,15 @@ public class BudgetController {
         BudgetOverviewResponse response = new BudgetOverviewResponse(
                 totalAmount,
                 spentAmount,
-                remainingAmount,
+                totalRemaining,
                 spentPercentage
         );
 
         return ResponseEntity.ok(response);
     }
 
-    private static BudgetOverviewResponse getBudgetOverviewResponse(Budget budget, BigDecimal totalAmount) {
-        BigDecimal remainingAmount = budget.getRemainingAmount();
-        BigDecimal spentAmount = totalAmount.subtract(remainingAmount);
-        int spentPercentage = totalAmount.compareTo(BigDecimal.ZERO) > 0
-                ? spentAmount.multiply(BigDecimal.valueOf(100))
-                .divide(totalAmount, 0, RoundingMode.HALF_UP)
-                .intValue()
-                : 0;
 
-        // Tạo và trả về đối tượng BudgetOverviewResponse
-        return new BudgetOverviewResponse(
-                totalAmount,
-                spentAmount,
-                remainingAmount,
-                spentPercentage
-        );
-    }
+
 }
 
 
