@@ -3,19 +3,24 @@ package com.example.zencash.controller;
 import com.example.zencash.dto.CategoryGroupStatisticResponse;
 import com.example.zencash.dto.TransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
+import com.example.zencash.entity.Transaction;
 import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
+import com.example.zencash.repository.TransactionRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.service.TransactionService;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.Year;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +33,9 @@ public class TransactionController {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
+
 
     @PostMapping
     public ResponseEntity<TransactionResponse> create(@RequestBody TransactionRequest request) {
@@ -79,5 +87,40 @@ public class TransactionController {
 
         return ResponseEntity.ok(transactionService.getTopExpenses(limit, user));
     }
+    @GetMapping("/monthly")
+    public ResponseEntity<?> getMonthlySummary(@AuthenticationPrincipal UserDetails userDetails,
+                                               @RequestParam(value = "year", required = false) Integer year) {
+        try {
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
+            int targetYear = (year != null) ? year : Year.now().getValue();
+
+            List<Transaction> transactions = transactionRepository.findAllByUserAndYear(user.getId(), targetYear);
+
+            Map<Integer, Map<String, BigDecimal>> monthlySummary = new HashMap<>();
+
+            for (Transaction tx : transactions) {
+                int month = tx.getDate().getMonthValue();
+                String type = tx.getType();
+
+                monthlySummary.putIfAbsent(month, new HashMap<>());
+                Map<String, BigDecimal> summary = monthlySummary.get(month);
+                summary.putIfAbsent("income", BigDecimal.ZERO);
+                summary.putIfAbsent("expense", BigDecimal.ZERO);
+
+                if ("INCOME".equalsIgnoreCase(type)) {
+                    summary.put("income", summary.get("income").add(tx.getAmount()));
+                } else if ("EXPENSE".equalsIgnoreCase(type)) {
+                    summary.put("expense", summary.get("expense").add(tx.getAmount()));
+                }
+            }
+
+            return ResponseEntity.ok(monthlySummary);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
 }
+
+

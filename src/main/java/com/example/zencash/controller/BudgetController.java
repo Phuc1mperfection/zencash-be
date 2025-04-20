@@ -4,8 +4,10 @@ import com.example.zencash.dto.BudgetOverviewResponse;
 import com.example.zencash.dto.BudgetRequest;
 import com.example.zencash.dto.BudgetResponse;
 import com.example.zencash.entity.Budget;
+import com.example.zencash.entity.Transaction;
 import com.example.zencash.entity.User;
 import com.example.zencash.exception.AppException;
+import com.example.zencash.repository.BudgetRepository;
 import com.example.zencash.repository.TransactionRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.service.BudgetService;
@@ -31,10 +33,12 @@ public class BudgetController {
 
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final BudgetRepository budgetRepository;
 
-    public BudgetController(UserRepository userRepository, TransactionRepository transactionRepository) {
+    public BudgetController(UserRepository userRepository, TransactionRepository transactionRepository, BudgetRepository budgetRepository) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
+        this.budgetRepository = budgetRepository;
     }
 
     @PostMapping
@@ -102,6 +106,7 @@ public class BudgetController {
         budgetService.deleteBudget(id, user);
         return ResponseEntity.noContent().build();
     }
+
     @GetMapping("/overview")
     public ResponseEntity<BudgetOverviewResponse> getOverview(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
@@ -126,6 +131,7 @@ public class BudgetController {
 
         return ResponseEntity.ok(response);
     }
+
     @GetMapping("/{id}/overview")
     public ResponseEntity<BudgetOverviewResponse> getBudgetOverview(
             @PathVariable Long id,
@@ -180,8 +186,31 @@ public class BudgetController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/transactions/summary")
+    public ResponseEntity<Map<String, BigDecimal>> getTransactionSummary(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
+        List<Transaction> transactions = transactionRepository.findAllByUser(user);
 
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
+
+        for (Transaction tx : transactions) {
+            if ("INCOME".equalsIgnoreCase(tx.getType())) {
+                totalIncome = totalIncome.add(tx.getAmount());
+            } else if ("EXPENSE".equalsIgnoreCase(tx.getType())) {
+                totalExpense = totalExpense.add(tx.getAmount());
+            }
+        }
+
+        Map<String, BigDecimal> summary = new HashMap<>();
+        summary.put("totalIncome", totalIncome);
+        summary.put("totalExpense", totalExpense);
+
+        return ResponseEntity.ok(summary);
+    }
 }
+
 
 

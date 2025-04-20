@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
@@ -45,4 +46,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.budget.user = :user AND t.type = 'EXPENSE'")
     BigDecimal sumTotalExpenseByUser(@Param("user") User user);
 
+    List<Transaction> findAllByBudgetId(Long budgetId);
+    @Query("SELECT t FROM Transaction t WHERE t.budget.user.id = :userId AND FUNCTION('YEAR', t.date) = :year")
+    List<Transaction> findAllByUserAndYear(@Param("userId") UUID userId, @Param("year") int year);
 }
