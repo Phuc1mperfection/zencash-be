@@ -42,5 +42,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     // Hoặc nếu không dùng @Query thì có thể dùng cách đặt tên sau (nếu JPA hỗ trợ):
     List<Transaction> findByBudget_UserAndTypeOrderByAmountDesc(User user, String type, Pageable pageable);
+    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.budget.user = :user AND t.type = 'EXPENSE'")
+    BigDecimal sumTotalExpenseByUser(@Param("user") User user);
 
 }

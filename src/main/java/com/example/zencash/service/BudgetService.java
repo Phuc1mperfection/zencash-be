@@ -133,32 +133,39 @@ public class BudgetService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
     public BudgetOverviewResponse getBudgetOverview(UUID userId) {
+        // Lấy danh sách các budget của user
         List<Budget> budgets = budgetRepository.findByUserId(userId);
 
-        BigDecimal totalBudget = BigDecimal.ZERO;
-        BigDecimal totalSpent = BigDecimal.ZERO;
+        // Tính tổng totalBudget từ các budget
+        BigDecimal totalBudget = budgets.stream()
+                .map(Budget::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        for (Budget budget : budgets) {
-            totalBudget = totalBudget.add(budget.getTotalAmount());
-            BigDecimal spent = budget.getTotalAmount().subtract(budget.getRemainingAmount());
-            totalSpent = totalSpent.add(spent);
-        }
+        // Lấy User entity từ userId (nếu cần)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        BigDecimal totalRemaining = totalBudget.subtract(totalSpent);
+        // Tính tổng chi tiêu từ tất cả các giao dịch EXPENSE của user
+        BigDecimal totalSpent = transactionRepository.findAllByUser(user).stream()
+                .filter(tx -> "EXPENSE".equalsIgnoreCase(tx.getType()))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Nếu totalSpent là âm, set về 0
+        // Nếu totalSpent bị âm vì lý do gì đó, reset về 0
         if (totalSpent.compareTo(BigDecimal.ZERO) < 0) {
             totalSpent = BigDecimal.ZERO;
         }
 
-        // Tính tỷ lệ phần trăm chi tiêu
+        // Tính tổng còn lại
+        BigDecimal totalRemaining = totalBudget.subtract(totalSpent);
+
+        // Tính phần trăm chi tiêu
         int spentPercentage = totalBudget.compareTo(BigDecimal.ZERO) > 0
                 ? totalSpent.multiply(BigDecimal.valueOf(100))
                 .divide(totalBudget, 0, RoundingMode.HALF_UP)
                 .intValue()
                 : 0;
 
-        // Trả về response
         return new BudgetOverviewResponse(
                 totalBudget,
                 totalSpent,

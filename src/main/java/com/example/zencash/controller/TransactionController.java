@@ -71,7 +71,7 @@ public class TransactionController {
     }
     @GetMapping("/top-expenses")
     public ResponseEntity<List<TransactionResponse>> getTopExpenses(
-            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "3") int limit,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = userRepository.findByEmail(userDetails.getUsername())
