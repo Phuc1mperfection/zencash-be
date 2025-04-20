@@ -15,4 +15,9 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     boolean existsByNameIgnoreCaseAndUserAndIdNot(String name, User user, Long id);
 
     Optional<Budget> findFirstByUser(User user);
+
+    List<Budget> findAllByUserId(UUID userId);
+
+    // Tìm kiếm Budget theo userId và id của budget (id là Long, userId là UUID)
+    Optional<Budget> findByIdAndUserId(Long id, UUID userId);
 }
