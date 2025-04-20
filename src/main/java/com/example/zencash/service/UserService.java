@@ -41,35 +41,27 @@ public class UserService {
             user.setUsername(request.getUsername());
         }
 
-        // Cập nhật avatar nếu có tên file mới
-        if (avatarFilename != null && !avatarFilename.isBlank()) {
-            user.setAvatar(avatarFilename);
-        } else if (user.getAvatar() == null || user.getAvatar().isBlank()) {
-            user.setAvatar("hinh-cute-meo.jpg"); // avatar mặc định nếu chưa có
+        // Xử lý avatar đúng logic
+        if ((request.getAvatar() == null || request.getAvatar().isBlank()) &&
+                (user.getAvatar() == null || user.getAvatar().isBlank())) {
+            user.setAvatar("hinh-cute-meo.jpg");
+        } else if (request.getAvatar() != null && !request.getAvatar().isBlank()) {
+            user.setAvatar(request.getAvatar());
         }
 
         if (request.getCurrency() != null) {
             user.setCurrency(request.getCurrency());
         }
 
-        if (request.getEmail() != null && !request.getEmail().equalsIgnoreCase(user.getEmail())) {
-            userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
-                if (!existingUser.getId().equals(user.getId())) {
-                    throw new AppException(ErrorCode.EMAIL_TAKEN);
-                }
-            });
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new AppException(ErrorCode.EMAIL_TAKEN);
+            }
             user.setEmail(request.getEmail());
         }
 
         userRepository.save(user);
-
-        return new UserResponse(
-                user.getEmail(),
-                user.getUsername(),
-                user.getFullname(),
-                user.getAvatar(),
-                user.getCurrency()
-        );
+        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(), user.getCurrency());
     }
 
 

@@ -42,4 +42,34 @@ public class TransactionController {
     public ResponseEntity<List<TransactionResponse>> getByBudget(@PathVariable Long budgetId) {
         return ResponseEntity.ok(transactionService.getByBudget(budgetId));
     }
+
+    //Thống kê thu chi toàn bộ
+    @GetMapping("/summary")
+    public ResponseEntity<Map<String, BigDecimal>> getUserIncomeExpense(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        Map<String, BigDecimal> result = transactionService.calculateUserIncomeExpense(user);
+        return ResponseEntity.ok(result);
+    }
+
+    //Thống kê theo CategoryGroup
+    @GetMapping("/statistics/category-group/{budgetId}")
+    public ResponseEntity<List<CategoryGroupStatisticResponse>> getStatisticsByCategoryGroup(@PathVariable Long budgetId) {
+        List<CategoryGroupStatisticResponse> stats = transactionService.getCategoryGroupStatistics(budgetId);
+        return ResponseEntity.ok(stats);
+    }
+    @GetMapping("/top-expenses")
+    public ResponseEntity<List<TransactionResponse>> getTopExpenses(
+            @RequestParam(defaultValue = "10") int limit,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        return ResponseEntity.ok(transactionService.getTopExpenses(limit, user));
+    }
+
 }

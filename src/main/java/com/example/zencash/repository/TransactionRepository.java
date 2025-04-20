@@ -2,6 +2,7 @@ package com.example.zencash.repository;
 
 import com.example.zencash.entity.Transaction;
 import com.example.zencash.entity.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,25 +32,14 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     JOIN c.categoryGroup cg
     WHERE t.budget.id = :budgetId
     GROUP BY cg.id, cg.name""")
+    List<CategoryGroupStatisticResponse> getStatisticsByBudgetId(@Param("budgetId") Long budgetId);
 
-    List<Transaction> findTop5ByBudgetIdOrderByDateDesc(Long budgetId);
+    @Query("SELECT t FROM Transaction t WHERE t.budget.user = :user AND t.type = :type ORDER BY t.amount DESC")
+    List<Transaction> findTopByUserAndTypeOrderByAmountDesc(@Param("user") User user,
+                                                            @Param("type") String type,
+                                                            Pageable pageable);
 
-    List<Transaction> findTop5ByBudgetIdOrderByDateAsc(Long budgetId);
-
-    // Lấy giao dịch theo ngày
-    List<Transaction> findByBudgetIdAndDateEquals(Long budgetId, LocalDate date);
-
-    // Lấy giao dịch trong tuần
-    @Query("SELECT t FROM Transaction t WHERE t.budget.id = :budgetId AND WEEK(t.date) = WEEK(:startDate) AND YEAR(t.date) = YEAR(:startDate)")
-    List<Transaction> findByBudgetIdAndWeek(Long budgetId, LocalDate startDate);
-
-    // Lấy giao dịch theo tháng
-    List<Transaction> findByBudgetIdAndDateBetween(Long budgetId, LocalDate startDate, LocalDate endDate);
-
-    // Lấy tất cả giao dịch của người dùng (dựa trên ví)
-    List<Transaction> findByBudget_UserId(UUID userId);
+    // Hoặc nếu không dùng @Query thì có thể dùng cách đặt tên sau (nếu JPA hỗ trợ):
+    List<Transaction> findByBudget_UserAndTypeOrderByAmountDesc(User user, String type, Pageable pageable);
 
 }
-
-
-

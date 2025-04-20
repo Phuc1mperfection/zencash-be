@@ -53,10 +53,7 @@ public class CategoryService {
             throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
         }
 
-        if (isValidIcon(categoryRequest.getIcon())) {
-            throw new AppException(ErrorCode.ICON_NOT_FOUND);
-        }
-
+      
         Category category = new Category();
         category.setName(categoryRequest.getName());
         category.setIcon(categoryRequest.getIcon());
@@ -92,9 +89,7 @@ public class CategoryService {
             throw new AppException(ErrorCode.CATEGORY_ALREADY_EXISTS);
         }
 
-        if (isValidIcon(categoryRequest.getIcon())) {
-            throw new AppException(ErrorCode.ICON_NOT_FOUND);
-        }
+
 
         category.setName(categoryRequest.getName());
         category.setIcon(categoryRequest.getIcon());

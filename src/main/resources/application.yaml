@@ -26,3 +26,6 @@ jwt:
   signerKey: "yFDzyCN5=vFSB$#dyT=4RT8cZy8mdlJW9TX$9Hfmls%L%^@8-s$4T%vGWTBsm^WG"
   validDuration: 3600 # in second - hour
   refreshableDuration: 36000 # in seconds - 10 hours
+gemini:
+  api:
+    key: AIzaSyB9lH6wEKL42YfyT6iOX8IuHCPn8mjeI_w
