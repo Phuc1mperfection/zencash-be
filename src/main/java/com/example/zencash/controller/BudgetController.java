@@ -33,12 +33,10 @@ public class BudgetController {
 
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
-    private final BudgetRepository budgetRepository;
 
-    public BudgetController(UserRepository userRepository, TransactionRepository transactionRepository, BudgetRepository budgetRepository) {
+    public BudgetController(UserRepository userRepository, TransactionRepository transactionRepository) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
-        this.budgetRepository = budgetRepository;
     }
 
     @PostMapping
