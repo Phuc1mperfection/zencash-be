@@ -1,5 +1,6 @@
 package com.example.zencash.repository;
 
+import com.example.zencash.dto.CategoryGroupStatisticResponse;
 import com.example.zencash.entity.Transaction;
 import com.example.zencash.entity.User;
 import org.springframework.data.domain.Pageable;
@@ -41,5 +42,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     // Hoặc nếu không dùng @Query thì có thể dùng cách đặt tên sau (nếu JPA hỗ trợ):
     List<Transaction> findByBudget_UserAndTypeOrderByAmountDesc(User user, String type, Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+            "WHERE t.budget.id = :budgetId " +
+            "AND t.type = 'EXPENSE' " +
+            "AND t.category.categoryGroup.id = :categoryGroupId " +
+            "AND YEAR(t.date) = :year " +
+            "AND MONTH(t.date) = :month")
+    BigDecimal getTotalExpenseByCategoryGroupInMonth(
+            @Param("budgetId") Long budgetId,
+            @Param("categoryGroupId") Long categoryGroupId,
+            @Param("year") int year,
+            @Param("month") int month
+    );
 
 }

@@ -23,53 +23,53 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class StatisticController {
 
-    private final StatisticService statisticService;
-    private final TransactionService transactionService;
-    private final UserRepository userRepository;
-
-    @GetMapping("/top-transactions")
-    public ResponseEntity<TopTransactionResponse> getTopTransactions(@RequestParam Long budgetId) {
-        return ResponseEntity.ok(statisticService.getTopTransactions(budgetId));
-    }
-
-    // Thống kê theo ngày
-    @GetMapping("/by-day")
-    public ResponseEntity<StatisticResultResponse> getStatisticByDay(@RequestParam("budgetId") Long budgetId, @RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
-        List<Transaction> transactions = statisticService.getTransactionsByDate(budgetId, date);
-        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
-        return ResponseEntity.ok(response);
-    }
-
-    // Thống kê theo tuần
-    @GetMapping("/by-week")
-    public ResponseEntity<StatisticResultResponse> getStatisticByWeek(@RequestParam("budgetId") Long budgetId, @RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate) {
-        List<Transaction> transactions = statisticService.getTransactionsByWeek(budgetId, startDate);
-        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
-        return ResponseEntity.ok(response);
-    }
-
-    // Thống kê theo tháng
-    @GetMapping("/by-month")
-    public ResponseEntity<StatisticResultResponse> getStatisticByMonth(@RequestParam("budgetId") Long budgetId, @RequestParam("month") int month, @RequestParam("year") int year) {
-        List<Transaction> transactions = statisticService.getTransactionsByMonth(budgetId, month, year);
-        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
-        return ResponseEntity.ok(response);
-    }
-
-    // Thống kê theo năm
-    @GetMapping("/by-year")
-    public ResponseEntity<StatisticResultResponse> getStatisticByYear(@RequestParam("budgetId") Long budgetId, @RequestParam("year") int year) {
-        List<Transaction> transactions = statisticService.getTransactionsByYear(budgetId, year);
-        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
-        return ResponseEntity.ok(response);
-    }
-
-    // Thống kê tổng thu/chi theo ví của người dùng
-    @GetMapping("/total")
-    public ResponseEntity<StatisticResultResponse> getTotalStatistics(@RequestParam("userId") UUID userId) {
-        List<Transaction> transactions = statisticService.getAllTransactionsByUser(userId);
-        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
-        return ResponseEntity.ok(response);
-    }
+//    private final StatisticService statisticService;
+//    private final TransactionService transactionService;
+//    private final UserRepository userRepository;
+//
+//    @GetMapping("/top-transactions")
+//    public ResponseEntity<TopTransactionResponse> getTopTransactions(@RequestParam Long budgetId) {
+//        return ResponseEntity.ok(statisticService.getTopTransactions(budgetId));
+//    }
+//
+//    // Thống kê theo ngày
+//    @GetMapping("/by-day")
+//    public ResponseEntity<StatisticResultResponse> getStatisticByDay(@RequestParam("budgetId") Long budgetId, @RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+//        List<Transaction> transactions = statisticService.getTransactionsByDate(budgetId, date);
+//        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
+//        return ResponseEntity.ok(response);
+//    }
+//
+//    // Thống kê theo tuần
+//    @GetMapping("/by-week")
+//    public ResponseEntity<StatisticResultResponse> getStatisticByWeek(@RequestParam("budgetId") Long budgetId, @RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate) {
+//        List<Transaction> transactions = statisticService.getTransactionsByWeek(budgetId, startDate);
+//        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
+//        return ResponseEntity.ok(response);
+//    }
+//
+//    // Thống kê theo tháng
+//    @GetMapping("/by-month")
+//    public ResponseEntity<StatisticResultResponse> getStatisticByMonth(@RequestParam("budgetId") Long budgetId, @RequestParam("month") int month, @RequestParam("year") int year) {
+//        List<Transaction> transactions = statisticService.getTransactionsByMonth(budgetId, month, year);
+//        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
+//        return ResponseEntity.ok(response);
+//    }
+//
+//    // Thống kê theo năm
+//    @GetMapping("/by-year")
+//    public ResponseEntity<StatisticResultResponse> getStatisticByYear(@RequestParam("budgetId") Long budgetId, @RequestParam("year") int year) {
+//        List<Transaction> transactions = statisticService.getTransactionsByYear(budgetId, year);
+//        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
+//        return ResponseEntity.ok(response);
+//    }
+//
+//    // Thống kê tổng thu/chi theo ví của người dùng
+//    @GetMapping("/total")
+//    public ResponseEntity<StatisticResultResponse> getTotalStatistics(@RequestParam("userId") UUID userId) {
+//        List<Transaction> transactions = statisticService.getAllTransactionsByUser(userId);
+//        StatisticResultResponse response = statisticService.buildStatisticResult(transactions);
+//        return ResponseEntity.ok(response);
+//    }
 }
 
