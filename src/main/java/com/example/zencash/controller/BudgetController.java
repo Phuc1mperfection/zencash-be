@@ -33,10 +33,12 @@ public class BudgetController {
 
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final BudgetRepository budgetRepository;
 
-    public BudgetController(UserRepository userRepository, TransactionRepository transactionRepository) {
+    public BudgetController(UserRepository userRepository, TransactionRepository transactionRepository, BudgetRepository budgetRepository) {
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
+        this.budgetRepository = budgetRepository;
     }
 
     @PostMapping
@@ -114,7 +116,34 @@ public class BudgetController {
         return ResponseEntity.ok(overview);
     }
 
+    @GetMapping("/{budgetId}/transactions")
+    public ResponseEntity<Map<String, BigDecimal>> getBudgetTransactions(@PathVariable Long budgetId) {
+        // Lấy ngân sách theo ID
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new RuntimeException("Budget not found"));
 
+        // Lấy tất cả các giao dịch của người dùng liên quan đến ngân sách
+        List<Transaction> transactions = transactionRepository.findAllByBudgetId(budgetId);
+
+        // Tính toán thu nhập và chi tiêu
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
+
+        for (Transaction tx : transactions) {
+            if ("INCOME".equalsIgnoreCase(tx.getType())) {
+                totalIncome = totalIncome.add(tx.getAmount());
+            } else if ("EXPENSE".equalsIgnoreCase(tx.getType())) {
+                totalExpense = totalExpense.add(tx.getAmount());
+            }
+        }
+
+        // Trả về kết quả
+        Map<String, BigDecimal> result = new HashMap<>();
+        result.put("income", totalIncome);
+        result.put("expense", totalExpense);
+
+        return ResponseEntity.ok(result);
+    }
     @GetMapping("/total-remaining")
     public ResponseEntity<Map<String, BigDecimal>> getUserTotalRemaining(
             @AuthenticationPrincipal UserDetails userDetails) {
