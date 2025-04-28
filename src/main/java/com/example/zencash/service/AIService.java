@@ -26,7 +26,7 @@ public class AIService {
 {
   "contents": [{
     "parts": [{
-      "text": "From the invoice text below, extract:\n- The **total amount** (detect and return correct number for both VND and USD. USD might look like $50,00 or $1,200.50. VND might look like 8.000.000đ or 8,000,000 VND).\n- A **short note**.\n- The **date** if available (in dd/MM/yyyy or any common format).\n\nUser: %s\nInvoice:\n%s"
+      "text": "From the invoice text below, extract:\n- The total amount (detect and return correct number for both VND and USD. USD might look like $50,00 or $1,200.50. VND might look like 8.000.000đ or 8,000,000 VND).\n- A short note.\n- The date if available (in dd/MM/yyyy or any common format).\n\nUser: %s\nInvoice:\n%s"
     }]
   }]
 }

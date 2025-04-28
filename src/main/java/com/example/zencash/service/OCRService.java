@@ -15,8 +15,7 @@ public class OCRService {
     public String extractTextFromImage(File file) {
         try {
             ITesseract tesseract = new Tesseract();
-            tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata"); // chú ý: dùng \\ thay vì \
-            // Thư mục chứa ngôn ngữ của Tesseract
+            tesseract.setDatapath("C:\\Program Files\\Tesseract-OCR\\tessdata"); 
             tesseract.setLanguage("vie+eng");
 
             return tesseract.doOCR(file);
