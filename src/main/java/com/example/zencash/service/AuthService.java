@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 
 @Service
-
 @RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
@@ -26,7 +25,9 @@ public class AuthService {
     private final TokenRepository tokenRepository;
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final DefaultDataService defaultDataService; // Add DefaultDataService
 
+    @Transactional
     public String register(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new AppException(ErrorCode.USERNAME_TAKEN);
@@ -41,7 +42,11 @@ public class AuthService {
             if (user.getAvatar() == null || user.getAvatar().isBlank()) {
                 user.setAvatar("hinh-cute-meo.jpg");
             }
-            userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            
+            // Create default budgets, category groups, and categories for new user
+            defaultDataService.createDefaultDataForUser(savedUser);
+            
             return "User registered successfully!";
         } catch (Exception e) {
             throw new AppException(ErrorCode.INTERNAL_ERROR);
@@ -56,14 +61,14 @@ public class AuthService {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        // Delete old tokens for the user
+        
         tokenRepository.deleteByUser(user);
 
-        // Generate new Access Token and Refresh Token
+        // Generate new 
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        // Save the tokens to the database
+        // Save to database
         Token token = Token.builder()
                 .user(user)
                 .token(accessToken) // Access token
@@ -94,14 +99,14 @@ public class AuthService {
             throw new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // Extract user info from token
+        
         String email = jwtUtil.extractEmail(refreshToken);
         String username = jwtUtil.extractUsername(refreshToken);
         String fullname = storedToken.getUser().getFullname();
         String currency = storedToken.getUser().getCurrency();
         String avatar = storedToken.getUser().getAvatar();
 
-        // Generate new access token
+        
         String newAccessToken = jwtUtil.generateAccessToken(email, username);
 
         return new AuthResponse(username, email, newAccessToken, refreshToken,fullname,currency,avatar);
