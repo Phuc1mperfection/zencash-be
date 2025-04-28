@@ -18,6 +18,6 @@ public class TransactionResponse {
     private String type;
     private String note;
     private LocalDate date;
-
+    private String categoryName;
 }
 

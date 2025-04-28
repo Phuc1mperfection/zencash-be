@@ -36,7 +36,6 @@ public class TransactionController {
     @Autowired
     private TransactionRepository transactionRepository;
 
-
     @PostMapping
     public ResponseEntity<TransactionResponse> create(@RequestBody TransactionRequest request) {
         return ResponseEntity.ok(transactionService.createTransaction(request));
@@ -53,13 +52,13 @@ public class TransactionController {
         return ResponseEntity.ok(Collections.singletonMap("deleted", deleted));
     }
 
-    //Lấy danh sách transaction theo budget
+    // Lấy danh sách transaction theo budget
     @GetMapping("/budget/{budgetId}")
     public ResponseEntity<List<TransactionResponse>> getByBudget(@PathVariable Long budgetId) {
         return ResponseEntity.ok(transactionService.getByBudget(budgetId));
     }
 
-    //Thống kê thu chi toàn bộ
+    // Thống kê thu chi toàn bộ
     @GetMapping("/summary")
     public ResponseEntity<Map<String, BigDecimal>> getUserIncomeExpense(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -71,12 +70,14 @@ public class TransactionController {
         return ResponseEntity.ok(result);
     }
 
-    //Thống kê theo CategoryGroup
+    // Thống kê theo CategoryGroup
     @GetMapping("/statistics/category-group/{budgetId}")
-    public ResponseEntity<List<CategoryGroupStatisticResponse>> getStatisticsByCategoryGroup(@PathVariable Long budgetId) {
+    public ResponseEntity<List<CategoryGroupStatisticResponse>> getStatisticsByCategoryGroup(
+            @PathVariable Long budgetId) {
         List<CategoryGroupStatisticResponse> stats = transactionService.getCategoryGroupStatistics(budgetId);
         return ResponseEntity.ok(stats);
     }
+
     @GetMapping("/top-expenses")
     public ResponseEntity<List<TransactionResponse>> getTopExpenses(
             @RequestParam(defaultValue = "3") int limit,
@@ -87,9 +88,10 @@ public class TransactionController {
 
         return ResponseEntity.ok(transactionService.getTopExpenses(limit, user));
     }
+
     @GetMapping("/monthly")
     public ResponseEntity<?> getMonthlySummary(@AuthenticationPrincipal UserDetails userDetails,
-                                               @RequestParam(value = "year", required = false) Integer year) {
+            @RequestParam(value = "year", required = false) Integer year) {
         try {
             User user = userRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -121,6 +123,16 @@ public class TransactionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
+
+    @GetMapping("/recent")
+    public ResponseEntity<List<TransactionResponse>> getRecentTransactions(
+            @RequestParam(defaultValue = "5") int limit,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        List<TransactionResponse> recentTransactions = transactionService.getRecentTransactions(limit, user);
+        return ResponseEntity.ok(recentTransactions);
+    }
 }
-
-

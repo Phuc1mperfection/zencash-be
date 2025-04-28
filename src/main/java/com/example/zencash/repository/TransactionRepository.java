@@ -49,4 +49,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findAllByBudgetId(Long budgetId);
     @Query("SELECT t FROM Transaction t WHERE t.budget.user.id = :userId AND FUNCTION('YEAR', t.date) = :year")
     List<Transaction> findAllByUserAndYear(@Param("userId") UUID userId, @Param("year") int year);
+    List<Transaction> findByBudget_UserOrderByDateDescCreateAtDesc(User user, Pageable pageable);
 }
