@@ -19,13 +19,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static jakarta.xml.bind.DatatypeConverter.parseDate;
 
 @Service
 public class TransactionService {
@@ -35,8 +35,6 @@ public class TransactionService {
     @Autowired private BudgetRepository budgetRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private BudgetService budgetService;
-
-
     @Autowired private AIService aiService;
 
     public TransactionResponse createTransaction(TransactionRequest request) {
@@ -130,7 +128,8 @@ public class TransactionService {
                 tx.getAmount(),
                 tx.getType(),
                 tx.getNote(),
-                tx.getDate()
+                tx.getDate(),
+                tx.getCategory().getName()
         );
     }
     private BigDecimal parseAmount(String text) {
@@ -152,7 +151,7 @@ public class TransactionService {
                     long dotCount = raw.chars().filter(ch -> ch == '.').count();
 
                     if (commaCount == 1 && dotCount == 0) {
-                        // Ví dụ: "50,00" (kiểu EU) => "50.00"
+                        // Ví dụ: "50,00 => "50.00"
                         raw = raw.replace(",", ".");
                     } else {
                         // Ví dụ: "1,000.50" => "1000.50"
@@ -178,13 +177,24 @@ public class TransactionService {
     }
 
     private LocalDate parseDate(String text) {
-        Pattern pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})");
-        Matcher matcher = pattern.matcher(text);
-        if (matcher.find()) {
-            return LocalDate.parse(matcher.group(1));
+        // Pattern cho các định dạng ngày phổ biến: yyyy-MM-dd hoặc dd/MM/yyyy
+        Pattern pattern1 = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})"); // yyyy-MM-dd
+        Pattern pattern2 = Pattern.compile("(\\d{2}/\\d{2}/\\d{4})"); // dd/MM/yyyy
+
+        Matcher matcher1 = pattern1.matcher(text);
+        if (matcher1.find()) {
+            return LocalDate.parse(matcher1.group(1));
         }
-        return LocalDate.now(); // fallback nếu không tìm được
+
+        Matcher matcher2 = pattern2.matcher(text);
+        if (matcher2.find()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            return LocalDate.parse(matcher2.group(1), formatter);
+        }
+
+        return LocalDate.now(); // fallback nếu không tìm thấy
     }
+
 
     public TransactionResponse createFromInvoiceText(String text, String email) {
         // Gửi văn bản OCR cho AI để xử lý thông tin
@@ -306,14 +316,12 @@ public class TransactionService {
         List<Transaction> expenses = transactionRepository.findByBudget_UserAndTypeOrderByAmountDesc(user, "EXPENSE", pageable);
         return expenses.stream().map(this::mapToResponse).toList();
     }
-//    public List<TransactionResponse> getTopExpenses(int limit, User user) {
-//        List<Transaction> expenses = transactionRepository.findTopByUserAndTypeOrderByAmountDesc(user, "EXPENSE", limit);
-//        return expenses.stream()
-//                .map(this::mapToResponse)
-//                .toList();
-//    }
-
-
+    public List<TransactionResponse> getRecentTransactions(int limit, User user) {
+        List<Transaction> transactions = transactionRepository.findByBudget_UserOrderByDateDescCreateAtDesc(user, PageRequest.of(0, limit));
+        return transactions.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 }
 
 
