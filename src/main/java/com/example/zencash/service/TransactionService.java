@@ -17,25 +17,31 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.format.TextStyle;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 @Service
 public class TransactionService {
 
-    @Autowired private TransactionRepository transactionRepository;
-    @Autowired private CategoryRepository categoryRepository;
-    @Autowired private BudgetRepository budgetRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private BudgetService budgetService;
-    @Autowired private AIService aiService;
+    @Autowired
+    private TransactionRepository transactionRepository;
+    @Autowired
+    private CategoryRepository categoryRepository;
+    @Autowired
+    private BudgetRepository budgetRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private BudgetService budgetService;
+    @Autowired
+    private AIService aiService;
 
     public TransactionResponse createTransaction(TransactionRequest request) {
         Budget budget = budgetService.getBudgetById(request.getBudgetId());
@@ -109,7 +115,6 @@ public class TransactionService {
         return result;
     }
 
-
     public List<TransactionResponse> getByBudget(Long budgetId) {
         return transactionRepository.findByBudgetId(budgetId)
                 .stream().map(this::mapToResponse)
@@ -129,9 +134,9 @@ public class TransactionService {
                 tx.getType(),
                 tx.getNote(),
                 tx.getDate(),
-                tx.getCategory().getName()
-        );
+                tx.getCategory().getName());
     }
+
     private BigDecimal parseAmount(String text) {
         // Xác định loại tiền
         boolean isUSD = text.contains("$") || text.toLowerCase().contains("usd");
@@ -169,8 +174,6 @@ public class TransactionService {
         throw new AppException(ErrorCode.INVALID_DATA);
     }
 
-
-
     private String parseNote(String text) {
         // Tùy bạn, hoặc chỉ cần cắt dòng đầu tiên
         return text.lines().findFirst().orElse("Invoice");
@@ -195,12 +198,12 @@ public class TransactionService {
         return LocalDate.now(); // fallback nếu không tìm thấy
     }
 
-
     public TransactionResponse createFromInvoiceText(String text, String email) {
         // Gửi văn bản OCR cho AI để xử lý thông tin
         String refinedText = aiService.sendMessageToAI(text, email);
 
-        // Tiến hành xử lý refinedText để tách các trường cần thiết như amount, date, note...
+        // Tiến hành xử lý refinedText để tách các trường cần thiết như amount, date,
+        // note...
         String[] lines = refinedText.split("\n");
 
         BigDecimal amount = BigDecimal.ZERO;
@@ -212,15 +215,14 @@ public class TransactionService {
 
             if (line.toLowerCase().startsWith("date:") || line.toLowerCase().contains("ngày")) {
                 date = parseDate(line);
-            }  else if (line.toLowerCase().contains("amount") || line.toLowerCase().contains("số tiền")) {
+            } else if (line.toLowerCase().contains("amount") || line.toLowerCase().contains("số tiền")) {
 
-            amount = parseAmount(line);
+                amount = parseAmount(line);
             } else if (line.toLowerCase().contains("note")) {
                 note = parseNote(line);
             }
         }
         System.out.println("RefinedText from AI:\n" + refinedText);
-
 
         // Tạo request DTO cho invoice
         InvoiceTransactionRequest invoiceRequest = new InvoiceTransactionRequest();
@@ -239,15 +241,15 @@ public class TransactionService {
 
         Budget budget = (request.getBudgetId() != null)
                 ? budgetRepository.findById(request.getBudgetId())
-                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND))
+                        .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND))
                 : budgetRepository.findFirstByUser(user)
-                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+                        .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
 
         Category category = (request.getCategoryId() != null)
                 ? categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND))
+                        .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND))
                 : categoryRepository.findFirstByUser(user)
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+                        .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
         TransactionRequest txRequest = new TransactionRequest();
         txRequest.setAmount(request.getAmount());
@@ -311,18 +313,141 @@ public class TransactionService {
                 .categoryId(categoryId)
                 .build();
     }
+
     public List<TransactionResponse> getTopExpenses(int limit, User user) {
         Pageable pageable = PageRequest.of(0, limit);
-        List<Transaction> expenses = transactionRepository.findByBudget_UserAndTypeOrderByAmountDesc(user, "EXPENSE", pageable);
+        List<Transaction> expenses = transactionRepository.findByBudget_UserAndTypeOrderByAmountDesc(user, "EXPENSE",
+                pageable);
         return expenses.stream().map(this::mapToResponse).toList();
     }
+
     public List<TransactionResponse> getRecentTransactions(int limit, User user) {
-        List<Transaction> transactions = transactionRepository.findByBudget_UserOrderByDateDescCreateAtDesc(user, PageRequest.of(0, limit));
+        List<Transaction> transactions = transactionRepository.findByBudget_UserOrderByDateDescCreateAtDesc(user,
+                PageRequest.of(0, limit));
         return transactions.stream()
                 .map(this::mapToResponse)
                 .toList();
     }
+
+    public List<CategoryStatisticResponse> getTransactionStatsByType(User user, String type) {
+        // Kiểm tra type hợp lệ
+        if (!type.equalsIgnoreCase("INCOME") && !type.equalsIgnoreCase("EXPENSE")) {
+            throw new AppException(ErrorCode.INVALID_DATA);
+        }
+
+        // Lấy thống kê theo loại (INCOME hoặc EXPENSE)
+        return transactionRepository.getCategoryStatisticsByType(user, type.toUpperCase());
+    }
+
+    /**
+     * Lấy xu hướng chi tiêu theo thời gian
+     */
+    public List<SpendingTrendResponse> getSpendingTrend(User user, String period, int limit) {
+        // Xác định ngày bắt đầu và ngày kết thúc cho khoảng thời gian
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate;
+
+        // Xác định khoảng thời gian
+        if ("week".equalsIgnoreCase(period)) {
+            startDate = endDate.minusWeeks(limit);
+        } else if ("quarter".equalsIgnoreCase(period)) {
+            startDate = endDate.minusMonths(limit * 3);
+        } else {
+            // Mặc định là month
+            startDate = endDate.minusMonths(limit);
+        }
+
+        // Lấy dữ liệu theo khoảng thời gian
+        List<Object[]> trendData;
+        if ("week".equalsIgnoreCase(period)) {
+            trendData = transactionRepository.getWeeklySpendingTrend(user, startDate, endDate);
+        } else if ("quarter".equalsIgnoreCase(period)) {
+            trendData = transactionRepository.getQuarterlySpendingTrend(user, startDate, endDate);
+        } else {
+            trendData = transactionRepository.getMonthlySpendingTrend(user, startDate, endDate);
+        }
+
+        // Chuyển đổi kết quả thành cấu trúc của SpendingTrendResponse
+        Map<String, SpendingTrendResponse> trendMap = new LinkedHashMap<>();
+
+        // Xử lý dữ liệu trả về
+        for (Object[] row : trendData) {
+            int year = ((Number) row[0]).intValue();
+            int timeUnit = ((Number) row[1]).intValue();
+            String type = (String) row[2];
+            BigDecimal amount = (BigDecimal) row[3];
+
+            // Tạo key cho period
+            String periodKey = formatPeriodKey(period, year, timeUnit);
+
+            // Tạo hoặc cập nhật entry trong map
+            SpendingTrendResponse trendEntry = trendMap.computeIfAbsent(periodKey,
+                    k -> new SpendingTrendResponse(k, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+
+            if ("INCOME".equals(type)) {
+                trendEntry.setIncome(amount);
+            } else if ("EXPENSE".equals(type)) {
+                trendEntry.setExpense(amount);
+            }
+
+            // Tính balance
+            trendEntry.setBalance(trendEntry.getIncome().subtract(trendEntry.getExpense()));
+        }
+
+        // Chuyển đổi map thành list và trả về
+        return new ArrayList<>(trendMap.values());
+    }
+
+    /**
+     * Format key cho period
+     */
+    private String formatPeriodKey(String period, int year, int timeUnit) {
+        if ("week".equalsIgnoreCase(period)) {
+            return "Week " + timeUnit + ", " + year;
+        } else if ("quarter".equalsIgnoreCase(period)) {
+            return "Q" + timeUnit + " " + year;
+        } else {
+            // Định dạng tháng
+            Month month = Month.of(timeUnit);
+            return month.getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " " + year;
+        }
+    }
+
+    /**
+     * Lấy dữ liệu so sánh giữa ngân sách và chi tiêu thực tế
+     */
+    public List<BudgetComparisonResponse> getBudgetComparison(User user) {
+        List<Budget> budgets = budgetRepository.findByUser(user);
+        List<BudgetComparisonResponse> result = new ArrayList<>();
+
+        for (Budget budget : budgets) {
+            BigDecimal allocatedAmount = budget.getTotalAmount();
+            BigDecimal actualSpent = transactionRepository.sumAmountByBudgetIdAndType(budget.getId(), "EXPENSE");
+
+            // Nếu chưa có chi tiêu nào thì gán là 0
+            if (actualSpent == null) {
+                actualSpent = BigDecimal.ZERO;
+            }
+
+            BigDecimal remaining = allocatedAmount.subtract(actualSpent);
+
+            // Tính tỷ lệ phần trăm sử dụng
+            int usagePercentage = 0;
+            if (allocatedAmount.compareTo(BigDecimal.ZERO) > 0) {
+                usagePercentage = actualSpent.multiply(BigDecimal.valueOf(100))
+                        .divide(allocatedAmount, 0, RoundingMode.HALF_UP)
+                        .intValue();
+            }
+
+            result.add(new BudgetComparisonResponse(
+                    budget.getId(),
+                    budget.getName(),
+                    allocatedAmount,
+                    actualSpent,
+                    remaining,
+                    usagePercentage));
+        }
+
+        return result;
+    }
 }
-
-
-

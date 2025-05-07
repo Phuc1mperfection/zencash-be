@@ -1,6 +1,9 @@
 package com.example.zencash.controller;
 
+import com.example.zencash.dto.BudgetComparisonResponse;
 import com.example.zencash.dto.CategoryGroupStatisticResponse;
+import com.example.zencash.dto.CategoryStatisticResponse;
+import com.example.zencash.dto.SpendingTrendResponse;
 import com.example.zencash.dto.TransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
 import com.example.zencash.entity.Transaction;
@@ -135,4 +138,55 @@ public class TransactionController {
         List<TransactionResponse> recentTransactions = transactionService.getRecentTransactions(limit, user);
         return ResponseEntity.ok(recentTransactions);
     }
+
+    @GetMapping("/pie-chart/{type}")
+    public ResponseEntity<List<CategoryStatisticResponse>> getTransactionPieChartData(
+            @PathVariable String type,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        List<CategoryStatisticResponse> pieChartData = transactionService.getTransactionStatsByType(user, type);
+        return ResponseEntity.ok(pieChartData);
+    }
+
+    @GetMapping("/pie-chart")
+    public ResponseEntity<Map<String, List<CategoryStatisticResponse>>> getAllPieChartData(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        Map<String, List<CategoryStatisticResponse>> result = new HashMap<>();
+        result.put("income", transactionService.getTransactionStatsByType(user, "INCOME"));
+        result.put("expense", transactionService.getTransactionStatsByType(user, "EXPENSE"));
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/trend")
+    public ResponseEntity<List<SpendingTrendResponse>> getSpendingTrend(
+            @RequestParam(value = "period", defaultValue = "MONTH") String period,
+            @RequestParam(value = "limit", defaultValue = "6") int limit,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        List<SpendingTrendResponse> trendData = transactionService.getSpendingTrend(user, period, limit);
+        return ResponseEntity.ok(trendData);
+    }
+
+    @GetMapping("/budget-comparison")
+    public ResponseEntity<List<BudgetComparisonResponse>> getBudgetComparison(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        List<BudgetComparisonResponse> comparisonData = transactionService.getBudgetComparison(user);
+        return ResponseEntity.ok(comparisonData);
+    }
+
 }
