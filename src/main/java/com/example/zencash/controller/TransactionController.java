@@ -142,26 +142,34 @@ public class TransactionController {
     @GetMapping("/pie-chart/{type}")
     public ResponseEntity<List<CategoryStatisticResponse>> getTransactionPieChartData(
             @PathVariable String type,
+            @RequestParam(value = "budgetId", required = false) Long budgetId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        List<CategoryStatisticResponse> pieChartData = transactionService.getTransactionStatsByType(user, type);
+        List<CategoryStatisticResponse> pieChartData = budgetId != null
+                ? transactionService.getTransactionStatsByTypeAndBudget(user, type, budgetId)
+                : transactionService.getTransactionStatsByType(user, type);
         return ResponseEntity.ok(pieChartData);
     }
 
     @GetMapping("/pie-chart")
     public ResponseEntity<Map<String, List<CategoryStatisticResponse>>> getAllPieChartData(
+            @RequestParam(value = "budgetId", required = false) Long budgetId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         Map<String, List<CategoryStatisticResponse>> result = new HashMap<>();
-        result.put("income", transactionService.getTransactionStatsByType(user, "INCOME"));
-        result.put("expense", transactionService.getTransactionStatsByType(user, "EXPENSE"));
-
+        if (budgetId != null) {
+            result.put("income", transactionService.getTransactionStatsByTypeAndBudget(user, "INCOME", budgetId));
+            result.put("expense", transactionService.getTransactionStatsByTypeAndBudget(user, "EXPENSE", budgetId));
+        } else {
+            result.put("income", transactionService.getTransactionStatsByType(user, "INCOME"));
+            result.put("expense", transactionService.getTransactionStatsByType(user, "EXPENSE"));
+        }
         return ResponseEntity.ok(result);
     }
 

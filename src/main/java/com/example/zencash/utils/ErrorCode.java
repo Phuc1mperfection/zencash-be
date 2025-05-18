@@ -49,7 +49,8 @@ public enum ErrorCode {
     // ==== 1400-1499: TRANSACTION ====
     TRANSACTION_NOT_FOUND("Transaction not found", 1401, HttpStatus.BAD_REQUEST),
     INVALID_DATA("Money not found",1402,HttpStatus.NOT_FOUND),
-    AI_RESPONSE_INVALID("AIIIII not found",1403,HttpStatus.BAD_REQUEST);
+    AI_RESPONSE_INVALID("AIIIII not found",1403,HttpStatus.BAD_REQUEST),
+    ACCESS_DENIED("Access denied",1404,HttpStatus.FORBIDDEN);
 
     private final String message;
     private final int code;

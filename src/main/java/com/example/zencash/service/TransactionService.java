@@ -12,6 +12,7 @@ import com.example.zencash.repository.TransactionRepository;
 import com.example.zencash.repository.UserRepository;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,8 @@ public class TransactionService {
     private BudgetService budgetService;
     @Autowired
     private AIService aiService;
+    @Value("${gemini.api.key}")
+    private String apiKey;
 
     public TransactionResponse createTransaction(TransactionRequest request) {
         Budget budget = budgetService.getBudgetById(request.getBudgetId());
@@ -271,6 +274,7 @@ public class TransactionService {
         // Gửi văn bản OCR đến AI để refine
         String refinedText = aiService.sendMessageToAI(text, email);
         System.out.println("RefinedText from AI:\n" + refinedText);
+        System.out.println("dhsbgfshdrgyru fgkjdghdskjfghjdf df-g-dfg-d-fg-- df-g-df-g-ds"+apiKey);
 
         // Mặc định
         BigDecimal amount = BigDecimal.ZERO;
@@ -337,6 +341,24 @@ public class TransactionService {
 
         // Lấy thống kê theo loại (INCOME hoặc EXPENSE)
         return transactionRepository.getCategoryStatisticsByType(user, type.toUpperCase());
+    }
+
+    public List<CategoryStatisticResponse> getTransactionStatsByTypeAndBudget(User user, String type, Long budgetId) {
+        // Kiểm tra type hợp lệ
+        if (!type.equalsIgnoreCase("INCOME") && !type.equalsIgnoreCase("EXPENSE")) {
+            throw new AppException(ErrorCode.INVALID_DATA);
+        }
+
+        // Kiểm tra budget có tồn tại và thuộc về user
+        Budget budget = budgetRepository.findById(budgetId)
+                .orElseThrow(() -> new AppException(ErrorCode.BUDGET_NOT_FOUND));
+
+        if (!budget.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // Lấy thống kê theo loại và budget
+        return transactionRepository.getCategoryStatisticsByTypeAndBudget(user, type.toUpperCase(), budgetId);
     }
 
     /**
