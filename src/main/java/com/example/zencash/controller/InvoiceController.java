@@ -3,7 +3,6 @@ package com.example.zencash.controller;
 import com.example.zencash.dto.InvoiceExtractedDataResponse;
 import com.example.zencash.dto.InvoiceTransactionRequest;
 import com.example.zencash.dto.TransactionResponse;
-import com.example.zencash.entity.Transaction;
 import com.example.zencash.service.OCRService;
 import com.example.zencash.service.TransactionService;
 import org.springframework.core.io.FileSystemResource;
