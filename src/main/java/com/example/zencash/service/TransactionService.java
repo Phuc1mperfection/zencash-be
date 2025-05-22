@@ -134,6 +134,9 @@ public class TransactionService {
                 .toList();
     }
 
+  public List<CategoryGroupStatisticResponse> getCategoryGroupStatistics(Long budgetId) {
+        return transactionRepository.getStatisticsByBudgetId(budgetId);
+    }
 
     private TransactionResponse mapToResponse(Transaction tx) {
         return new TransactionResponse(

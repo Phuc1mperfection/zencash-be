@@ -17,17 +17,17 @@ public class DatabaseSeeder {
     CommandLineRunner initDatabase(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
             // Check if admin user exists
-            if (userRepository.findByUsername("admin").isEmpty()) {
-                User admin = new User();
-                admin.setEmail("admin@gmail.com");
-                admin.setPassword(passwordEncoder.encode("admin123"));
-                admin.setUsername("admin");
-                admin.setFullname("Admin");
-                admin.setRoles(Set.of("ADMIN"));
-                admin.setActive(true);
-                userRepository.save(admin);
-                System.out.println("Admin user created successfully");
-            }
+            // if (userRepository.findByUsername("admin").isEmpty()) {
+            //     User admin = new User();
+            //     admin.setEmail("admin@gmail.com");
+            //     admin.setPassword(passwordEncoder.encode("admin123"));
+            //     admin.setUsername("admin");
+            //     admin.setFullname("Admin");
+            //     admin.setRoles(Set.of("ADMIN"));
+            //     admin.setActive(true);
+            //     userRepository.save(admin);
+            //     System.out.println("Admin user created successfully");
+            // }
         };
     }
 }

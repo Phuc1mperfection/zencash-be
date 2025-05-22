@@ -77,6 +77,10 @@ public class UserService {
         if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
             throw new AppException(ErrorCode.PASSWORD_ERROR);
         }
+        if (request.getCurrentPassword().equals(request.getConfirmNewPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_ERROR1);
+        }
+
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);

@@ -43,15 +43,16 @@ public class AuthService {
                 user.setAvatar("hinh-cute-meo.jpg");
             }
             User savedUser = userRepository.save(user);
-            
+
             // Create default budgets, category groups, and categories for new user
             defaultDataService.createDefaultDataForUser(savedUser);
-            
+
             return "User registered successfully!";
         } catch (Exception e) {
             throw new AppException(ErrorCode.INTERNAL_ERROR);
         }
     }
+
     @Transactional
     public AuthResponse login(LoginResponse loginResponse) {
         User user = userRepository.findByEmail(loginResponse.getEmail())
@@ -61,10 +62,14 @@ public class AuthService {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        
+        // Kiểm tra xem tài khoản có bị vô hiệu hóa không
+        if (!user.isActive()) {
+            throw new AppException(ErrorCode.ACCOUNT_DISABLED);
+        }
+
         tokenRepository.deleteByUser(user);
 
-        // Generate new 
+        // Generate new
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
@@ -80,7 +85,8 @@ public class AuthService {
                 .build();
         tokenRepository.save(token);
 
-        return new AuthResponse(user.getUsername(), user.getEmail(), accessToken, refreshToken, user.getFullname(),user.getCurrency(),user.getAvatar(), user.getRoles());
+        return new AuthResponse(user.getUsername(), user.getEmail(), accessToken, refreshToken, user.getFullname(),
+                user.getCurrency(), user.getAvatar(), user.getRoles());
     }
 
     public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
@@ -99,17 +105,16 @@ public class AuthService {
             throw new AppException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        
         String email = jwtUtil.extractEmail(refreshToken);
         String username = jwtUtil.extractUsername(refreshToken);
         String fullname = storedToken.getUser().getFullname();
         String currency = storedToken.getUser().getCurrency();
         String avatar = storedToken.getUser().getAvatar();
 
-        
         String newAccessToken = jwtUtil.generateAccessToken(email, username);
 
-        return new AuthResponse(username, email, newAccessToken, refreshToken,fullname,currency,avatar, storedToken.getUser().getRoles());
+        return new AuthResponse(username, email, newAccessToken, refreshToken, fullname, currency, avatar,
+                storedToken.getUser().getRoles());
     }
 
     @Transactional
@@ -128,9 +133,8 @@ public class AuthService {
         storedToken.setRevoked(true); // Đánh dấu token đã bị thu hồi
         tokenRepository.save(storedToken);
 
-        return new AuthResponse("User logged out successfully", null, null, null, null,null,null,null);
+        return new AuthResponse("User logged out successfully", null, null, null, null, null, null, null);
     }
-
 
     @Transactional
     public AuthResponse deleteAccount(String token) {
@@ -150,8 +154,7 @@ public class AuthService {
         tokenRepository.save(storedToken);
 
         // Trả về phản hồi thành công
-        return new AuthResponse("Account deleted successfully", "", "", "","","","",null);
+        return new AuthResponse("Account deleted successfully", "", "", "", "", "", "", null);
     }
 
 }
-

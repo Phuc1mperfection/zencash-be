@@ -26,6 +26,20 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         List<Transaction> findAllByUser(@Param("user") User user);
 
         // boolean existsByNameIgnoreCase(String name);
+    @Query("""
+    SELECT t FROM Transaction t
+    WHERE t.budget.id = :budgetId
+      AND t.category.categoryGroup.id = :categoryGroupId
+      AND FUNCTION('MONTH', t.date) = :month
+      AND FUNCTION('YEAR', t.date) = :year
+      AND t.type = 'EXPENSE'
+""")
+    List<Transaction> findByCategoryGroupAndMonth(
+            @Param("budgetId") Long budgetId,
+            @Param("categoryGroupId") Long categoryGroupId,
+            @Param("month") int month,
+            @Param("year") int year
+    );
 
         @Query("""
                         SELECT new com.example.zencash.dto.CategoryGroupStatisticResponse(
@@ -120,4 +134,17 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         List<Object[]> getQuarterlySpendingTrend(@Param("user") User user,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t " +
+            "WHERE t.budget.id = :budgetId " +
+            "AND t.type = 'EXPENSE' " +
+            "AND t.category.categoryGroup.id = :categoryGroupId " +
+            "AND YEAR(t.date) = :year " +
+            "AND MONTH(t.date) = :month")
+    BigDecimal getTotalExpenseByCategoryGroupInMonth(
+            @Param("budgetId") Long budgetId,
+            @Param("categoryGroupId") Long categoryGroupId,
+            @Param("year") int year,
+            @Param("month") int month
+    );
+
 }

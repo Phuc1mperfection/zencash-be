@@ -78,19 +78,4 @@ public class UserController {
         return ResponseEntity.ok(authService.deleteAccount(token));
     }
 
-    @PutMapping("/{userId}/toggle-active")
-//    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> toggleUserActiveStatus(@PathVariable UUID userId) {
-
-        userService.toggleUserActiveStatus(userId);
-        return ResponseEntity.ok("Status toggled");
-    }
-
-    @GetMapping("/email")
-    public ResponseEntity<UUID> getUserIdByEmail(@RequestParam String email) {
-        UUID userId = userService.getUserIdByEmail(email);
-        return ResponseEntity.ok(userId);
-    }
-
-
 }

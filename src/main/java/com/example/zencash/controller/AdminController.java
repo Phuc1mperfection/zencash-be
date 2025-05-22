@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,11 +20,14 @@ public class AdminController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final com.example.zencash.service.UserService userService;
 
-    public AdminController(UserRepository userRepository, PasswordEncoder passwordEncoder, MailService mailService) {
+    public AdminController(UserRepository userRepository, PasswordEncoder passwordEncoder, MailService mailService,
+            com.example.zencash.service.UserService userService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
+        this.userService = userService;
     }
 
     @GetMapping("/users/{email}")
@@ -74,33 +78,20 @@ public class AdminController {
             return ResponseEntity.ok(userRepository.findAll());
         }
     }
-     @PutMapping("/users/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateUser(@PathVariable UUID id, @RequestBody User userDetails) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
 
-        User user = optionalUser.get();
-        
-        // Update user info
-        user.setEmail(userDetails.getEmail());
-        user.setUsername(userDetails.getUsername());
-        user.setFullname(userDetails.getFullname());
-        user.setAvatar(userDetails.getAvatar());
-        user.setCurrency(userDetails.getCurrency());
-        user.setActive(userDetails.isActive());
-        user.setRoles(userDetails.getRoles());
-        
-        // Only update password if it's provided
-        if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+    @PatchMapping("/users/{id}/toggle-active")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> toggleUserActiveStatus(@PathVariable UUID id) {
+        try {
+            userService.toggleUserActiveStatus(id);
+            return ResponseEntity.ok(
+                    Map.of("success", true,
+                            "message", "User active status toggled successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("success", false,
+                            "message", e.getMessage()));
         }
-        
-        // Save updated user
-        User updatedUser = userRepository.save(user);
-        return ResponseEntity.ok(updatedUser);
     }
 
 }
