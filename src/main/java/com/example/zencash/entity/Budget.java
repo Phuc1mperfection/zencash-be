@@ -20,10 +20,19 @@ public class Budget {
     @ManyToOne
     private User user;
 
+    @Column
     private String name;
+
+    @Column
     private BigDecimal totalAmount;
+
+    @Column
     private BigDecimal remainingAmount;
+
+    @Column
     private LocalDateTime createdAt;
+
+    @Column
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -10,9 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
@@ -23,6 +21,21 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("SELECT t FROM Transaction t WHERE t.budget.user = :user")
     List<Transaction> findAllByUser(@Param("user") User user);
+
+    @Query("""
+    SELECT t FROM Transaction t
+    WHERE t.budget.id = :budgetId
+      AND t.category.categoryGroup.id = :categoryGroupId
+      AND FUNCTION('MONTH', t.date) = :month
+      AND FUNCTION('YEAR', t.date) = :year
+      AND t.type = 'EXPENSE'
+""")
+    List<Transaction> findByCategoryGroupAndMonth(
+            @Param("budgetId") Long budgetId,
+            @Param("categoryGroupId") Long categoryGroupId,
+            @Param("month") int month,
+            @Param("year") int year
+    );
 
     @Query("""
     SELECT new com.example.zencash.dto.CategoryGroupStatisticResponse(

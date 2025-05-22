@@ -9,12 +9,14 @@ import com.example.zencash.repository.UserRepository;
 import com.example.zencash.service.TransactionService;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,24 +53,16 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getByBudget(budgetId));
     }
 
-    //Thống kê thu chi toàn bộ
-    @GetMapping("/summary")
-    public ResponseEntity<Map<String, BigDecimal>> getUserIncomeExpense(
-            @AuthenticationPrincipal UserDetails userDetails) {
-
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-
-        Map<String, BigDecimal> result = transactionService.calculateUserIncomeExpense(user);
-        return ResponseEntity.ok(result);
+    @GetMapping("/category-group")
+    public ResponseEntity<List<TransactionResponse>> getTransactionsByCategoryGroup(
+            @RequestParam Long budgetId,
+            @RequestParam Long categoryGroupId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month
+    ) {
+        List<TransactionResponse> transactions = transactionService.getByCategoryGroup(budgetId, categoryGroupId, month);
+        return ResponseEntity.ok(transactions);
     }
 
-    //Thống kê theo CategoryGroup
-    @GetMapping("/statistics/category-group/{budgetId}")
-    public ResponseEntity<List<CategoryGroupStatisticResponse>> getStatisticsByCategoryGroup(@PathVariable Long budgetId) {
-        List<CategoryGroupStatisticResponse> stats = transactionService.getCategoryGroupStatistics(budgetId);
-        return ResponseEntity.ok(stats);
-    }
     @GetMapping("/top-expenses")
     public ResponseEntity<List<TransactionResponse>> getTopExpenses(
             @RequestParam(defaultValue = "3") int limit,

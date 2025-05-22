@@ -1,5 +1,6 @@
 package com.example.zencash.service;
 
+import com.example.zencash.dto.GoalOverviewResponse;
 import com.example.zencash.dto.GoalRequest;
 import com.example.zencash.dto.GoalResponse;
 import com.example.zencash.entity.*;
@@ -10,13 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class GoalService {
+public class GoalSpendingService {
     @Autowired private GoalRepository goalRepository;
     @Autowired private CategoryGroupRepository categoryGroupRepository;
     @Autowired private BudgetRepository budgetRepository;
@@ -93,6 +95,26 @@ public class GoalService {
 
         return transactionRepository.getTotalExpenseByCategoryGroupInMonth(budgetId, categoryGroupId, year, monthValue);
     }
+
+    public GoalOverviewResponse getGoalOverview(Long budgetId, LocalDate month) {
+        List<Goal> goals = goalRepository.findByBudgetIdAndMonth(budgetId, month.withDayOfMonth(1));
+
+        BigDecimal totalGoalAmount = goals.stream()
+                .map(Goal::getGoalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalSpent = goals.stream()
+                .map(goal -> calculateTotalSpent(budgetId, goal.getCategoryGroup().getId(), goal.getMonth()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalRemaining = totalGoalAmount.subtract(totalSpent);
+        BigDecimal spentPercentage = totalGoalAmount.compareTo(BigDecimal.ZERO) > 0
+                ? totalSpent.multiply(BigDecimal.valueOf(100)).divide(totalGoalAmount, 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return new GoalOverviewResponse(totalGoalAmount, totalSpent, totalRemaining, spentPercentage);
+    }
+
 
     private GoalResponse mapToResponse(Goal goal, BigDecimal totalSpent) {
         boolean warning = totalSpent.compareTo(goal.getGoalAmount().multiply(BigDecimal.valueOf(0.8))) >= 0;

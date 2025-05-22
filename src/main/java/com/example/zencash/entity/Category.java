@@ -32,7 +32,7 @@ public class Category {
     private boolean defaultCat;
 
     @ManyToOne
-    @JoinColumn(name = "cid")
+    @JoinColumn(name = "cgid")
     private CategoryGroup categoryGroup;
 
     @ManyToOne
