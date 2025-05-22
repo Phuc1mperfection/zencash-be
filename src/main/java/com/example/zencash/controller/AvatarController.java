@@ -20,11 +20,11 @@ import java.util.UUID;
 public class AvatarController {
 
     // Đường dẫn tuyệt đối đến folder ảnh (cùng cấp với src/)
-    private static final String ICON_DIR = System.getProperty("user.dir") + "/image/avatar/";
+    private static final String AVATAR_DIR = System.getProperty("user.dir") + "/image/avatar/";
 
     @GetMapping
     public ResponseEntity<?> getAllIcons() {
-        File folder = new File(ICON_DIR);
+        File folder = new File(AVATAR_DIR);
         if (!folder.exists() || !folder.isDirectory()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Avatar directory not found.");
         }
@@ -35,7 +35,7 @@ public class AvatarController {
 
     @GetMapping("/{filename:.+}")
     public ResponseEntity<Resource> getIcon(@PathVariable String filename) {
-        File file = new File(ICON_DIR + filename);
+        File file = new File(AVATAR_DIR + filename);
         if (!file.exists() || !file.isFile()) {
             return ResponseEntity.notFound().build();
         }
@@ -60,7 +60,7 @@ public class AvatarController {
         }
 
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        File targetFile = new File(ICON_DIR + filename);
+        File targetFile = new File(AVATAR_DIR + filename);
 
         try {
             file.transferTo(targetFile);

@@ -124,9 +124,16 @@ public class TransactionService {
                 .toList();
     }
 
-    public List<CategoryGroupStatisticResponse> getCategoryGroupStatistics(Long budgetId) {
-        return transactionRepository.getStatisticsByBudgetId(budgetId);
+    public List<TransactionResponse> getByCategoryGroup(Long budgetId, Long categoryGroupId, LocalDate month) {
+        int monthValue = month.getMonthValue();
+        int yearValue = month.getYear();
+
+        return transactionRepository.findByCategoryGroupAndMonth(budgetId, categoryGroupId, monthValue, yearValue)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
+
 
     private TransactionResponse mapToResponse(Transaction tx) {
         return new TransactionResponse(

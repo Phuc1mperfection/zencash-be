@@ -12,10 +12,13 @@ import com.example.zencash.utils.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 
 @RestController
@@ -45,7 +48,7 @@ public class UserController {
         if (userDetails == null) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
-        UserResponse response = userService.updateUser(userDetails.getUsername(), request);
+        UserResponse response = userService.updateUser(userDetails.getUsername(), request, request.getAvatar());
         return ResponseEntity.ok(response);
     }
 
@@ -74,4 +77,20 @@ public class UserController {
         String token = authHeader.substring(7);
         return ResponseEntity.ok(authService.deleteAccount(token));
     }
+
+    @PutMapping("/{userId}/toggle-active")
+//    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> toggleUserActiveStatus(@PathVariable UUID userId) {
+
+        userService.toggleUserActiveStatus(userId);
+        return ResponseEntity.ok("Status toggled");
+    }
+
+    @GetMapping("/email")
+    public ResponseEntity<UUID> getUserIdByEmail(@RequestParam String email) {
+        UUID userId = userService.getUserIdByEmail(email);
+        return ResponseEntity.ok(userId);
+    }
+
+
 }

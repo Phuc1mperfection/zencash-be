@@ -15,6 +15,7 @@ import com.example.zencash.service.TransactionService;
 import com.example.zencash.utils.ErrorCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.Year;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -79,6 +81,16 @@ public class TransactionController {
             @PathVariable Long budgetId) {
         List<CategoryGroupStatisticResponse> stats = transactionService.getCategoryGroupStatistics(budgetId);
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/category-group")
+    public ResponseEntity<List<TransactionResponse>> getTransactionsByCategoryGroup(
+            @RequestParam Long budgetId,
+            @RequestParam Long categoryGroupId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month
+    ) {
+        List<TransactionResponse> transactions = transactionService.getByCategoryGroup(budgetId, categoryGroupId, month);
+        return ResponseEntity.ok(transactions);
     }
 
     @GetMapping("/top-expenses")

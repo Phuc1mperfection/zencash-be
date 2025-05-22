@@ -10,6 +10,8 @@ import com.example.zencash.utils.ErrorCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class UserService {
     private final UserRepository userRepository;
@@ -29,13 +31,14 @@ public class UserService {
     }
 
     // Cập nhật thông tin người dùng
-    public UserResponse updateUser(String email, UpdateUserRequest request) {
+    public UserResponse updateUser(String email, UpdateUserRequest request, String avatarFilename) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
         if (request.getFullname() != null) {
             user.setFullname(request.getFullname());
         }
+
         if (request.getUsername() != null) {
             user.setUsername(request.getUsername());
         }
@@ -63,7 +66,6 @@ public class UserService {
         return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(), user.getCurrency(), user.getRoles());
     }
 
-
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -84,4 +86,20 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
     }
+
+    public void toggleUserActiveStatus(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        user.setActive(!user.isActive());
+        userRepository.save(user);
+    }
+
+    public UUID getUserIdByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
+    }
+
+
 }
