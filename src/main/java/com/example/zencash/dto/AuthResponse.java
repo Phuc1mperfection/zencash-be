@@ -1,5 +1,7 @@
 package com.example.zencash.dto;
 
+import java.util.Set;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,5 +15,6 @@ public class AuthResponse {
     private String fullname;
     private String currency;
     private String avatar;
+    private Set<String> roles; 
 
 }

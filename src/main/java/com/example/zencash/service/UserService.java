@@ -25,7 +25,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
 
-        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(),user.getCurrency());
+        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(),user.getCurrency(), user.getRoles());
     }
 
     // Cập nhật thông tin người dùng
@@ -60,7 +60,7 @@ public class UserService {
         }
 
         userRepository.save(user);
-        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(), user.getCurrency());
+        return new UserResponse(user.getEmail(), user.getUsername(), user.getFullname(), user.getAvatar(), user.getCurrency(), user.getRoles());
     }
 
 
